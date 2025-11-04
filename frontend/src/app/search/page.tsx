@@ -1,31 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useInView } from "react-intersection-observer";
+import type { InfiniteData } from "@tanstack/react-query";
 import { SearchBar } from "@/components/search";
 import { ProductGrid } from "@/components/products";
-import { useSearch } from "@/lib/queries/search";
+import { useInfiniteSearch } from "@/lib/queries/search";
 import { useAuth } from "@/lib/queries/auth";
+import type { SearchResponse } from "@/types";
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const { user } = useAuth();
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+  });
 
-  // Use the search hook - it will only run when searchQuery is not empty
-  const { data, isLoading, error } = useSearch(
-    {
-      query: searchQuery,
-      limit: 20,
-    },
-    {
-      enabled: hasSearched && searchQuery.length > 0,
+  // Use infinite search hook for pagination
+  const {
+    data: infiniteData,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteSearch(searchQuery, undefined, {
+    enabled: hasSearched && searchQuery.length > 0,
+  });
+
+  // Cast to proper type for TypeScript
+  const data = infiniteData as InfiniteData<SearchResponse> | undefined;
+
+  // Auto-fetch next page when in view
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  );
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setHasSearched(true);
   };
+
+  // Flatten all pages into single array
+  const allProducts = data?.pages?.flatMap((page) => page.results) ?? [];
+  const totalResults = data?.pages?.[0]?.total ?? 0;
+  const searchTime = data?.pages?.[0]?.search_time_ms ?? 0;
+  const isPersonalized = data?.pages?.[0]?.personalized ?? false;
 
   return (
     <div className="min-h-screen bg-ivory">
@@ -72,7 +95,7 @@ export default function SearchPage() {
         )}
 
         {/* No Results */}
-        {hasSearched && !isLoading && !error && data?.results.length === 0 && (
+        {hasSearched && !isLoading && !error && allProducts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray text-lg">
               No products found for &quot;{searchQuery}&quot;
@@ -81,23 +104,51 @@ export default function SearchPage() {
         )}
 
         {/* Results */}
-        {data && data.results.length > 0 && (
+        {allProducts.length > 0 && (
           <div>
             <div className="mb-6">
               <p className="text-gray">
-                Found {data.total} results in {data.search_time_ms.toFixed(0)}ms
-                {data.personalized && " (personalized)"}
+                Found {totalResults} results in {searchTime.toFixed(0)}ms
+                {isPersonalized && " (personalized)"}
               </p>
             </div>
 
             <ProductGrid
-              products={data.results}
+              products={allProducts}
               userId={user?.id}
               columns={4}
               onProductClick={(productId) => {
                 console.log("Product clicked:", productId);
               }}
             />
+
+            {/* Load More Trigger */}
+            {hasNextPage && (
+              <div ref={loadMoreRef} className="py-8 text-center">
+                {isFetchingNextPage ? (
+                  <div className="inline-block">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-pinterest-red border-r-transparent"></div>
+                    <p className="mt-2 text-gray text-sm">Loading more...</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fetchNextPage()}
+                    className="px-6 py-3 bg-pinterest-red text-white rounded-full hover:bg-dark-red transition-colors"
+                  >
+                    Load More
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* End of Results */}
+            {!hasNextPage && allProducts.length > 0 && (
+              <div className="py-8 text-center">
+                <p className="text-gray text-sm">
+                  You've reached the end of the results
+                </p>
+              </div>
+            )}
           </div>
         )}
       </main>

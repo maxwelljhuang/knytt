@@ -15,3 +15,6 @@ export type { ModalProps } from './Modal';
 
 export { default as Tooltip } from './Tooltip';
 export type { TooltipProps } from './Tooltip';
+
+export { ScrollToTop } from './ScrollToTop';
+export { ProgressBar } from './ProgressBar';

@@ -5,6 +5,7 @@ import { Search, Heart, ShoppingBag, User, LogOut, Settings, History, Sparkles, 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/queries/auth";
+import { useCartStore } from "@/lib/stores/cartStore";
 import Tooltip from "@/components/ui/Tooltip";
 
 export function Header() {
@@ -13,6 +14,7 @@ export function Header() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
+  const cartItemCount = useCartStore((state) => state.getItemCount());
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -145,9 +147,11 @@ export function Header() {
             <Tooltip content="Shopping Cart">
               <button className="p-2.5 hover:bg-light-gray rounded-full transition-all duration-[var(--duration-fast)] group relative active:scale-95">
                 <ShoppingBag className="w-5 h-5 text-charcoal group-hover:text-pinterest-red transition-colors group-hover:scale-110" />
-                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-pinterest-red text-white text-xs rounded-full flex items-center justify-center font-medium shadow-md">
-                  0
-                </span>
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-pinterest-red text-white text-xs rounded-full flex items-center justify-center font-medium shadow-md animate-scale-in">
+                    {cartItemCount}
+                  </span>
+                )}
               </button>
             </Tooltip>
 

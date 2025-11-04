@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { ProductResult } from "@/types/api";
 import { Heart, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTrackInteraction } from "@/lib/queries/feedback";
@@ -155,10 +156,12 @@ export function RecommendationCarousel({
             {/* Image */}
             <div className="relative aspect-[3/4] overflow-hidden bg-blush">
               {product.image_url ? (
-                <img
+                <Image
                   src={product.image_url}
                   alt={product.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  fill
+                  sizes="256px"
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
                   loading="lazy"
                 />
               ) : (

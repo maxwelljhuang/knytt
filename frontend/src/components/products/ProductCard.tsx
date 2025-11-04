@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Heart, ShoppingCart } from "lucide-react";
 import { ProductResult } from "@/types/api";
 import { InteractionType } from "@/types/enums";
 import { useTrackInteraction } from "@/lib/queries/feedback";
+import { useCartStore } from "@/lib/stores/cartStore";
 import { useToast } from "@/components/ui/Toast";
 import Tooltip from "@/components/ui/Tooltip";
 
@@ -19,6 +21,7 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
   const [imageLoaded, setImageLoaded] = useState(false);
   const [justLiked, setJustLiked] = useState(false);
   const feedbackMutation = useTrackInteraction();
+  const addToCart = useCartStore((state) => state.addItem);
   const toast = useToast();
 
   const handleLike = (e: React.MouseEvent) => {
@@ -61,6 +64,10 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
       return;
     }
 
+    // Optimistically add to cart store
+    addToCart(product);
+
+    // Track interaction in background
     feedbackMutation.mutate({
       user_id: userId,
       product_id: product.product_id,
@@ -101,10 +108,12 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
             {!imageLoaded && (
               <div className="absolute inset-0 bg-light-gray animate-shimmer" />
             )}
-            <img
+            <Image
               src={product.image_url}
               alt={product.title}
-              className={`w-full h-full object-cover group-hover:scale-110 transition-all duration-[var(--duration-slower)] ${
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className={`object-cover group-hover:scale-110 transition-all duration-[var(--duration-slower)] ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
               loading="lazy"
