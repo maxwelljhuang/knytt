@@ -56,13 +56,19 @@
   - Proper Logging and Documentation
 
 ### Task 6
-- [ ] 'Social Aspect'
+- [ ] Admin Dashboard
 
 ### Task 7
+- [ ] 'Social Aspect'
+
+### Task 8
 - [ ] Clothing Avatar
 
 ## Bug Fixes
-- [ ] Caching
+- [ ] (A) Caching
+
+- [ ] (B) Data Filtering
+  - ex: no Images
 
 - [ ] User Profile
   - [ ] Onboarding
@@ -71,12 +77,11 @@
 
 - [ ] Engineering of Link to Product on Host Site
 
-- [ ] Data Filtering
-  - ex: no Images
-
 - [ ] Enhance similarity/clustering of products
-  - [ ] Contrastive Clustering
-  - [ ] LLM assisted
-  - [ ] XGBoost Ranking
-  
+  - [ ] LLM assisted labeling
+  - [ ] Clustering/Contrastive Learning Module
+    - [ ] Fine-tuned CLIP
+    - [ ] Regularization -> clustering
+  - [ ] XGBoost Ranking Module
+
 ## Refactoring
