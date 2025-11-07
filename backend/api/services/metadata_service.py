@@ -172,6 +172,9 @@ class MetadataService:
                 FROM products
                 WHERE id::text = ANY(:product_ids)
                     AND is_active = true
+                    AND COALESCE(merchant_image_url, aw_image_url, large_image) IS NOT NULL
+                    AND COALESCE(merchant_image_url, aw_image_url, large_image) != ''
+                    AND COALESCE(merchant_image_url, aw_image_url, large_image) ~ '^https?://'
             """)
 
             try:

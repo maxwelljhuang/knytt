@@ -367,7 +367,7 @@ class TaskExecution(Base):
                  comment='Task positional arguments')
     kwargs = Column(JSONB, nullable=True,
                    comment='Task keyword arguments')
-    metadata = Column(JSONB, nullable=True,
+    task_metadata = Column(JSONB, nullable=True,
                      comment='Additional task metadata')
 
     # Execution details

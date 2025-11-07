@@ -58,7 +58,11 @@ coverage.xml
 .env
 .env.local
 .env.*.local
+.env.production
+.env.production.local
 backend/ml/.env.ml
+frontend/.env.production
+frontend/.env.production.local
 
 # Database
 *.db

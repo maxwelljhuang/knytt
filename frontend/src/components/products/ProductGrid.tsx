@@ -35,7 +35,10 @@ export function ProductGrid({
     );
   }
 
-  if (products.length === 0) {
+  // Filter out products without valid images (safety net)
+  const validProducts = products.filter(p => p.image_url?.trim());
+
+  if (validProducts.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground text-lg">No products found</p>
@@ -45,7 +48,7 @@ export function ProductGrid({
 
   return (
     <div className={`grid ${gridCols[columns]} gap-6`}>
-      {products.map((product) => (
+      {validProducts.map((product) => (
         <ProductCard
           key={product.product_id}
           product={product}

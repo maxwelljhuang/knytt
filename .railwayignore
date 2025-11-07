@@ -1,0 +1,92 @@
+# Railway Ignore File
+# Files and directories to exclude from Railway deployments
+
+# Development files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Frontend (deployed separately on Vercel)
+frontend/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Tests
+tests/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database files (use Railway's managed PostgreSQL)
+*.db
+*.sqlite
+*.sqlite3
+
+# Large data files (use volumes or S3)
+data/raw/
+data/processed/
+data/temp/
+
+# Keep these for deployment
+!data/indices/.gitkeep
+!models/cache/.gitkeep
+
+# Node modules (if any in backend)
+node_modules/
+
+# Python virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Jupyter notebooks
+*.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini

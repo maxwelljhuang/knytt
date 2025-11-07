@@ -19,6 +19,7 @@ interface ProductCardProps {
 export function ProductCard({ product, userId, onProductClick }: ProductCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [justLiked, setJustLiked] = useState(false);
   const feedbackMutation = useTrackInteraction();
   const addToCart = useCartStore((state) => state.addItem);
@@ -96,6 +97,11 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
     return `${product.currency || "$"}${product.price.toFixed(2)}`;
   };
 
+  // Don't render card if image failed to load
+  if (imageError) {
+    return null;
+  }
+
   return (
     <div
       onClick={handleCardClick}
@@ -103,28 +109,21 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
     >
       {/* Product Image */}
       <div className="relative aspect-square bg-light-gray/50 overflow-hidden">
-        {product.image_url ? (
-          <>
-            {!imageLoaded && (
-              <div className="absolute inset-0 bg-light-gray animate-shimmer" />
-            )}
-            <Image
-              src={product.image_url}
-              alt={product.title}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className={`object-cover group-hover:scale-110 transition-all duration-[var(--duration-slower)] ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              loading="lazy"
-              onLoad={() => setImageLoaded(true)}
-            />
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray">
-            <span className="text-sm">No image</span>
-          </div>
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-light-gray animate-shimmer" />
         )}
+        <Image
+          src={product.image_url!}
+          alt={product.title}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className={`object-cover group-hover:scale-110 transition-all duration-[var(--duration-slower)] ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          loading="lazy"
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageError(true)}
+        />
 
         {/* Like Button Overlay */}
         <Tooltip content={isLiked ? "Unlike" : "Like"}>
