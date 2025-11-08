@@ -6,8 +6,8 @@
   --color-ivory: 255 255 255;        /* Pure white background */
   --color-light-gray: 239 239 239;   /* Light gray for subtle backgrounds */
   --color-gray: 118 118 118;         /* Medium gray for secondary text */
-  --color-pinterest-red: 230 0 35;   /* #E60023 - Main brand color */
-  --color-dark-red: 204 0 31;        /* Darker red for hover states */
+  --color-pinterest-red: 0 96 57;    /* #006039 - Main brand color */
+  --color-dark-red: 0 76 45;         /* Darker green for hover states */
   --color-charcoal: 51 51 51;        /* Dark charcoal for text */
 
   /* Semantic colors using Pinterest palette */
@@ -15,8 +15,8 @@
   --foreground: 51 51 51;            /* charcoal - readable dark text */
 
   /* Component colors */
-  --primary: 230 0 35;               /* Pinterest red - primary actions */
-  --primary-foreground: 255 255 255; /* white text on red */
+  --primary: 0 96 57;                /* Green - primary actions */
+  --primary-foreground: 255 255 255; /* white text on green */
 
   --secondary: 239 239 239;          /* light gray - subtle backgrounds */
   --secondary-foreground: 51 51 51;  /* charcoal text */
@@ -24,7 +24,7 @@
   --muted: 239 239 239;              /* light gray */
   --muted-foreground: 118 118 118;   /* medium gray */
 
-  --accent: 230 0 35;                /* Pinterest red - same as primary */
+  --accent: 0 96 57;                 /* Green - same as primary */
   --accent-foreground: 255 255 255;  /* white */
 
   --destructive: 220 38 38;
@@ -32,7 +32,7 @@
 
   --border: 239 239 239;             /* light gray borders */
   --input: 239 239 239;              /* light gray input backgrounds */
-  --ring: 230 0 35;                  /* Pinterest red focus rings */
+  --ring: 0 96 57;                   /* Green focus rings */
 
   --radius: 0.75rem;
 

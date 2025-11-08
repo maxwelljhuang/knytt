@@ -9,7 +9,6 @@ import { useCartStore } from "@/lib/stores/cartStore";
 import Tooltip from "@/components/ui/Tooltip";
 
 export function Header() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const router = useRouter();
@@ -45,13 +44,6 @@ export function Header() {
     };
   }, [showMobileMenu]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
-
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
@@ -85,13 +77,7 @@ export function Header() {
           </Link>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/"
-              className="text-charcoal hover:text-pinterest-red transition-colors font-medium"
-            >
-              Discover
-            </Link>
+          <nav className="hidden md:flex items-center gap-6 flex-1">
             {isAuthenticated && (
               <Link
                 href="/feed"
@@ -101,38 +87,10 @@ export function Header() {
                 For You
               </Link>
             )}
-            <Link
-              href="/search"
-              className="text-charcoal hover:text-pinterest-red transition-colors font-medium"
-            >
-              Search
-            </Link>
           </nav>
-
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden lg:block">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray group-focus-within:text-pinterest-red transition-colors" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for products..."
-                className="w-full pl-12 pr-4 py-3 bg-white border-2 border-light-gray rounded-full focus:outline-none focus:ring-4 focus:ring-pinterest-red/20 focus:border-pinterest-red transition-all duration-[var(--duration-fast)] shadow-sm focus:shadow-md"
-              />
-            </div>
-          </form>
 
           {/* Action Icons */}
           <div className="flex items-center gap-3">
-            {/* Mobile Search */}
-            <Link
-              href="/search"
-              className="lg:hidden p-2 hover:bg-light-gray rounded-full transition-colors"
-            >
-              <Search className="w-5 h-5 text-charcoal" />
-            </Link>
-
             {/* Favorites */}
             <Tooltip content="Favorites">
               <Link
@@ -179,6 +137,17 @@ export function Header() {
                         {user.total_interactions} interactions
                       </p>
                     </div>
+
+                    <button
+                      onClick={() => {
+                        router.push('/profile');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-light-gray transition-all duration-[var(--duration-fast)] text-left group"
+                    >
+                      <User className="w-4 h-4 text-pinterest-red group-hover:scale-110 transition-transform" />
+                      <span className="text-sm text-charcoal font-medium">Profile</span>
+                    </button>
 
                     <button
                       onClick={() => {
@@ -251,13 +220,6 @@ export function Header() {
             className="md:hidden fixed inset-0 top-[73px] bg-ivory z-[var(--z-overlay)] animate-fade-in"
           >
             <nav className="flex flex-col p-6 space-y-2">
-              <Link
-                href="/"
-                onClick={() => setShowMobileMenu(false)}
-                className="px-4 py-3 text-lg font-medium text-charcoal hover:bg-light-gray rounded-lg transition-all active:scale-95"
-              >
-                Discover
-              </Link>
               {isAuthenticated && (
                 <Link
                   href="/feed"
@@ -268,18 +230,19 @@ export function Header() {
                   For You
                 </Link>
               )}
-              <Link
-                href="/search"
-                onClick={() => setShowMobileMenu(false)}
-                className="px-4 py-3 text-lg font-medium text-charcoal hover:bg-light-gray rounded-lg transition-all active:scale-95"
-              >
-                Search
-              </Link>
 
-              <div className="border-t border-light-gray my-4" />
+              {isAuthenticated && <div className="border-t border-light-gray my-4" />}
 
               {isAuthenticated ? (
                 <>
+                  <Link
+                    href="/profile"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="px-4 py-3 text-lg font-medium text-charcoal hover:bg-light-gray rounded-lg transition-all active:scale-95 flex items-center gap-3"
+                  >
+                    <User className="w-5 h-5 text-pinterest-red" />
+                    Profile
+                  </Link>
                   <Link
                     href="/favorites"
                     onClick={() => setShowMobileMenu(false)}
