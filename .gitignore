@@ -195,3 +195,12 @@ runs/
 wandb/
 mlruns/
 
+# ============================================
+# Terraform (Infrastructure as Code)
+# ============================================
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfvars
+terraform/.terraform.lock.hcl
+
