@@ -26,9 +26,15 @@ export default function SearchPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteSearch(searchQuery, undefined, {
-    enabled: hasSearched && searchQuery.length > 0,
-  });
+  } = useInfiniteSearch(
+    {
+      query: searchQuery,
+      limit: 20,
+    },
+    {
+      enabled: hasSearched && searchQuery.length > 0,
+    }
+  );
 
   // Cast to proper type for TypeScript
   const data = infiniteData as InfiniteData<SearchResponse> | undefined;
