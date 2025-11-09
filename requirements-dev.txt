@@ -14,7 +14,7 @@ hypothesis==6.92.1
 
 # Code Quality
 black==23.11.0
-isort==5.13.0
+isort==5.13.2
 flake8==6.1.0
 flake8-docstrings==1.7.0
 pylint==3.0.3
