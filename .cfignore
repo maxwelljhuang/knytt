@@ -1,0 +1,39 @@
+# Cloudflare Pages - Ignore backend files
+# This prevents Cloudflare from trying to install Python dependencies
+
+# Python files
+requirements.txt
+requirements-ml.txt
+*.pyc
+__pycache__/
+
+# Backend directory
+backend/
+database/
+scripts/
+
+# Python virtual environments
+venv/
+.venv/
+env/
+
+# Database files
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# Data directories
+data/
+
+# Docker files (not needed for frontend build)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Environment files (contain secrets)
+.env
+.env.*
+!.env.example

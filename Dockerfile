@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt requirements-ml.txt ./
+COPY backend/requirements.txt backend/requirements-ml.txt ./
 RUN pip install --user --no-cache-dir -r requirements.txt && \
     pip install --user --no-cache-dir -r requirements-ml.txt
 
