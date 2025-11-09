@@ -4,9 +4,10 @@ Settings and configuration for FastAPI application.
 """
 
 import os
-from typing import List, Optional
+import json
+from typing import List, Optional, Any
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, field_validator
 
 
 class APISettings(BaseSettings):
@@ -83,6 +84,18 @@ class APISettings(BaseSettings):
     enable_text_search: bool = Field(default=True, env="API_ENABLE_TEXT_SEARCH")
     enable_personalization: bool = Field(default=True, env="API_ENABLE_PERSONALIZATION")
     enable_feedback: bool = Field(default=True, env="API_ENABLE_FEEDBACK")
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> List[str]:
+        """Parse CORS origins from JSON string or list."""
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # Fall back to comma-separated list
+                return [origin.strip() for origin in v.split(",")]
+        return v
 
     class Config:
         env_file = ".env"
