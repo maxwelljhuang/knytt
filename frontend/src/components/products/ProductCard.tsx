@@ -66,7 +66,13 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
     }
 
     // Optimistically add to cart store
-    addToCart(product);
+    addToCart({
+      productId: product.product_id,
+      title: product.title,
+      price: product.price || 0,
+      currency: product.currency || "$",
+      imageUrl: product.image_url,
+    });
 
     // Track interaction in background
     feedbackMutation.mutate({
