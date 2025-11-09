@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/queries/auth";
 import {
-  useUserFavorites,
+  useFavorites,
   useUserStats,
   useInteractionHistory,
   useUpdatePreferences,
@@ -12,9 +12,9 @@ import { useState } from "react";
 
 export default function TestUserEndpointsPage() {
   const { user, isAuthenticated } = useAuth();
-  const { data: favorites, isLoading: favoritesLoading } = useUserFavorites();
-  const { data: stats, isLoading: statsLoading } = useUserStats();
-  const { data: history, isLoading: historyLoading } = useInteractionHistory();
+  const { data: favorites, isLoading: favoritesLoading } = useFavorites(user?.id);
+  const { data: stats, isLoading: statsLoading } = useUserStats(user?.id);
+  const { data: history, isLoading: historyLoading } = useInteractionHistory(user?.id);
 
   const updatePreferences = useUpdatePreferences();
   const removeFavorite = useRemoveFavorite();

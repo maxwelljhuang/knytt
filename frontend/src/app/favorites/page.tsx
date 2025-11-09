@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/queries/auth";
-import { useUserFavorites, useRemoveFavorite } from "@/lib/queries/user";
+import { useFavorites, useRemoveFavorite } from "@/lib/queries/user";
 import { Heart, ShoppingCart, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ import { InteractionType } from "@/types/enums";
 export default function FavoritesPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { data: favorites, isLoading: favoritesLoading } = useUserFavorites();
+  const { data: favorites, isLoading: favoritesLoading } = useFavorites(user?.id);
   const removeFavorite = useRemoveFavorite();
   const feedbackMutation = useTrackInteraction();
 
