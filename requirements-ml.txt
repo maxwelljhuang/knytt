@@ -1,0 +1,61 @@
+# GreenThumb ML Dependencies
+# Install with: pip install -r requirements-ml.txt
+# Requires: Python 3.8+
+
+# Include core requirements
+-r requirements.txt
+
+# ============================================
+# Core ML Frameworks
+# ============================================
+torch>=2.1.0,<2.3.0
+torchvision>=0.16.0,<0.18.0
+
+# ============================================
+# Embedding Models
+# ============================================
+# SigLIP/CLIP models for multimodal embeddings
+open-clip-torch>=2.24.0
+
+# Sentence transformers for text-only embeddings (optional for MVP)
+sentence-transformers>=2.3.0
+
+# ============================================
+# Vector Search & Indexing
+# ============================================
+# FAISS for fast approximate nearest neighbor search
+# Use faiss-gpu if you have CUDA-compatible GPU
+faiss-cpu>=1.7.4
+# faiss-gpu>=1.7.4  # Uncomment if using GPU
+
+# ============================================
+# Image Processing
+# ============================================
+Pillow>=10.0.0
+pillow-heif>=0.13.0  # For HEIC/HEIF image support
+
+# ============================================
+# Data Processing (ML-specific)
+# ============================================
+# Already in requirements.txt but ensuring versions:
+# numpy>=1.24.0
+# pandas>=2.1.0
+
+# ============================================
+# Caching & Performance
+# ============================================
+redis>=5.0.0  # Redis client for caching embeddings
+
+# ============================================
+# Utilities
+# ============================================
+tqdm>=4.66.0  # Progress bars for batch processing
+h5py>=3.10.0  # For storing large embedding arrays
+
+# ============================================
+# Optional: Advanced Features (Post-MVP)
+# ============================================
+# transformers>=4.36.0  # For custom model fine-tuning
+# datasets>=2.15.0  # Hugging Face datasets
+# accelerate>=0.25.0  # Distributed training
+# bitsandbytes>=0.41.0  # 8-bit optimization
