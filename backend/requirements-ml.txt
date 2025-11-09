@@ -2,8 +2,8 @@
 # Install with: pip install -r requirements-ml.txt
 # Requires: Python 3.8+
 
-# Include core requirements
--r requirements.txt
+# Note: Core requirements are included via requirements-api.txt
+# This file only contains ML-specific dependencies
 
 # ============================================
 # Core ML Frameworks
