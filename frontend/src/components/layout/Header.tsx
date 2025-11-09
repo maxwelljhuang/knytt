@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Search, Heart, ShoppingBag, User, LogOut, Settings, History, Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/queries/auth";
+import { useAuth, useLogout } from "@/lib/queries/auth";
 import { useCartStore } from "@/lib/stores/cartStore";
 import Tooltip from "@/components/ui/Tooltip";
 
@@ -13,7 +13,8 @@ export function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const logoutMutation = useLogout();
   const cartItemCount = useCartStore((state) => state.getItemCount());
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -53,8 +54,12 @@ export function Header() {
   };
 
   const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setShowUserMenu(false);
+        router.push("/");
+      },
+    });
   };
 
   return (
