@@ -23,10 +23,10 @@ class APISettings(BaseSettings):
     description: str = "ML-powered product search and recommendations"
 
     # Server settings
-    host: str = Field(default="0.0.0.0", env="API_HOST")
-    port: int = Field(default=8000, env="API_PORT")
-    reload: bool = Field(default=False, env="API_RELOAD")
-    workers: int = Field(default=4, env="API_WORKERS")
+    host: str = Field(default="0.0.0.0", alias="API_HOST")
+    port: int = Field(default=8000, alias="API_PORT")
+    reload: bool = Field(default=False, alias="API_RELOAD")
+    workers: int = Field(default=4, alias="API_WORKERS")
 
     # CORS settings
     cors_origins: List[str] = Field(
@@ -40,50 +40,50 @@ class APISettings(BaseSettings):
     # Database settings
     database_url: str = Field(
         default="postgresql://user:password@localhost:5432/greenthumb",
-        env="DATABASE_URL"
+        alias="DATABASE_URL"
     )
-    db_pool_size: int = Field(default=20, env="DB_POOL_SIZE")
-    db_max_overflow: int = Field(default=10, env="DB_MAX_OVERFLOW")
+    db_pool_size: int = Field(default=20, alias="DB_POOL_SIZE")
+    db_max_overflow: int = Field(default=10, alias="DB_MAX_OVERFLOW")
 
     # Redis settings
-    redis_host: str = Field(default="localhost", env="REDIS_HOST")
-    redis_port: int = Field(default=6379, env="REDIS_PORT")
-    redis_db: int = Field(default=1, env="REDIS_DB")
+    redis_host: str = Field(default="localhost", alias="REDIS_HOST")
+    redis_port: int = Field(default=6379, alias="REDIS_PORT")
+    redis_db: int = Field(default=1, alias="REDIS_DB")
 
     # Performance settings
-    enable_cache: bool = Field(default=True, env="API_ENABLE_CACHE")
-    cache_ttl_search: int = Field(default=300, env="API_CACHE_TTL_SEARCH")  # 5 min
-    cache_ttl_recommend: int = Field(default=120, env="API_CACHE_TTL_RECOMMEND")  # 2 min
-    cache_ttl_product: int = Field(default=3600, env="API_CACHE_TTL_PRODUCT")  # 1 hour
+    enable_cache: bool = Field(default=True, alias="API_ENABLE_CACHE")
+    cache_ttl_search: int = Field(default=300, alias="API_CACHE_TTL_SEARCH")  # 5 min
+    cache_ttl_recommend: int = Field(default=120, alias="API_CACHE_TTL_RECOMMEND")  # 2 min
+    cache_ttl_product: int = Field(default=3600, alias="API_CACHE_TTL_PRODUCT")  # 1 hour
 
     # Rate limiting
-    enable_rate_limit: bool = Field(default=True, env="API_ENABLE_RATE_LIMIT")
-    rate_limit_requests: int = Field(default=100, env="API_RATE_LIMIT_REQUESTS")
-    rate_limit_window: int = Field(default=60, env="API_RATE_LIMIT_WINDOW")  # seconds
+    enable_rate_limit: bool = Field(default=True, alias="API_ENABLE_RATE_LIMIT")
+    rate_limit_requests: int = Field(default=100, alias="API_RATE_LIMIT_REQUESTS")
+    rate_limit_window: int = Field(default=60, alias="API_RATE_LIMIT_WINDOW")  # seconds
 
     # Logging
-    log_level: str = Field(default="INFO", env="API_LOG_LEVEL")
+    log_level: str = Field(default="INFO", alias="API_LOG_LEVEL")
     log_format: str = "json"  # json or text
 
     # Security
     api_key_header: str = "X-API-Key"
-    require_api_key: bool = Field(default=False, env="API_REQUIRE_KEY")
-    api_keys: List[str] = Field(default=[], env="API_KEYS")
+    require_api_key: bool = Field(default=False, alias="API_REQUIRE_KEY")
+    api_keys: List[str] = Field(default=[], alias="API_KEYS")
 
     # Performance targets
     target_p95_latency_ms: int = 150
 
     # ML settings
-    ml_model_version: str = Field(default="v1.0-clip-vit-b32", env="ML_MODEL_VERSION")
+    ml_model_version: str = Field(default="v1.0-clip-vit-b32", alias="ML_MODEL_VERSION")
     faiss_index_path: str = Field(
         default="models/cache/faiss_index",
-        env="FAISS_INDEX_PATH"
+        alias="FAISS_INDEX_PATH"
     )
 
     # Feature flags
-    enable_text_search: bool = Field(default=True, env="API_ENABLE_TEXT_SEARCH")
-    enable_personalization: bool = Field(default=True, env="API_ENABLE_PERSONALIZATION")
-    enable_feedback: bool = Field(default=True, env="API_ENABLE_FEEDBACK")
+    enable_text_search: bool = Field(default=True, alias="API_ENABLE_TEXT_SEARCH")
+    enable_personalization: bool = Field(default=True, alias="API_ENABLE_PERSONALIZATION")
+    enable_feedback: bool = Field(default=True, alias="API_ENABLE_FEEDBACK")
 
     @field_validator("cors_origins", mode="before")
     @classmethod
