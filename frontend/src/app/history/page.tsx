@@ -28,14 +28,28 @@ const INTERACTION_TYPES = [
 export default function HistoryPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const userId = user?.id ? Number(user.id) : undefined;
   const [selectedType, setSelectedType] = useState("");
   const [limit] = useState(50);
 
   const { data: history, isLoading: historyLoading } = useInteractionHistory(
-    selectedType || undefined,
-    limit,
-    0
+    userId,
+    { offset: 0, limit }
   );
+
+  // Filter interactions by type (client-side)
+  const filteredHistory = history
+    ? {
+        ...history,
+        interactions: selectedType
+          ? history.interactions.filter((i) => i.interaction_type === selectedType)
+          : history.interactions,
+        total: selectedType
+          ? history.interactions.filter((i) => i.interaction_type === selectedType)
+              .length
+          : history.total,
+      }
+    : null;
 
   // Redirect to login if not authenticated
   if (!authLoading && !isAuthenticated) {
@@ -90,7 +104,7 @@ export default function HistoryPage() {
             </h1>
           </div>
           <p className="text-sage">
-            {history?.total || 0} total interactions
+            {filteredHistory?.total || 0} total interactions
           </p>
         </div>
 
@@ -117,7 +131,7 @@ export default function HistoryPage() {
         </div>
 
         {/* Empty State */}
-        {(!history || history.total === 0) && (
+        {(!filteredHistory || filteredHistory.total === 0) && (
           <div className="text-center py-20">
             <History className="w-16 h-16 text-sage/30 mx-auto mb-4" />
             <h2 className="text-2xl font-semibold text-evergreen mb-2">
@@ -136,9 +150,9 @@ export default function HistoryPage() {
         )}
 
         {/* History Timeline */}
-        {history && history.total > 0 && (
+        {filteredHistory && filteredHistory.total > 0 && (
           <div className="space-y-4">
-            {history.interactions.map((interaction) => {
+            {filteredHistory.interactions.map((interaction) => {
               const Icon = getInteractionIcon(interaction.interaction_type);
               const colorClass = getInteractionColor(interaction.interaction_type);
 
@@ -223,7 +237,7 @@ export default function HistoryPage() {
         )}
 
         {/* Load More (Future Enhancement) */}
-        {history && history.total > history.interactions.length && (
+        {filteredHistory && filteredHistory.total > filteredHistory.interactions.length && (
           <div className="mt-8 text-center">
             <button className="px-6 py-3 bg-white text-evergreen rounded-full hover:bg-blush transition-colors">
               Load More
