@@ -6,6 +6,7 @@ import {
   useQuery,
   useInfiniteQuery,
   UseQueryOptions,
+  UseInfiniteQueryOptions,
 } from "@tanstack/react-query";
 import { SearchRequest, SearchResponse } from "@/types/api";
 
@@ -47,7 +48,10 @@ export function useSearch(
  */
 export function useInfiniteSearch(
   baseRequest: Omit<SearchRequest, "offset">,
-  options?: any
+  options?: Omit<
+    UseInfiniteQueryOptions<SearchResponse>,
+    "queryKey" | "queryFn" | "initialPageParam" | "getNextPageParam"
+  >
 ) {
   return useInfiniteQuery({
     queryKey: ["search", "infinite", baseRequest],
