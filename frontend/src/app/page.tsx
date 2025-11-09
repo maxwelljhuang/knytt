@@ -10,16 +10,10 @@ import Link from "next/link";
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
+  const userId = user?.id ? Number(user.id) : undefined;
 
   // Fetch personalized recommendations for authenticated users
-  const { data: recommendedData, isLoading: recommendationsLoading } = useFeed(
-    user?.id,
-    {
-      limit: 12,
-      use_session_context: true,
-      enable_diversity: true,
-    }
-  );
+  const { data: recommendedData, isLoading: recommendationsLoading } = useFeed(userId);
 
   // Fetch featured products using a general query
   // Note: Backend requires non-empty query, so we use a broad search term
@@ -70,7 +64,7 @@ export default function HomePage() {
                   <RecommendationCarousel
                     title=""
                     products={recommendedData.results}
-                    userId={user?.id}
+                    userId={userId}
                     context="homepage_recommendations"
                   />
                 </div>
@@ -105,7 +99,7 @@ export default function HomePage() {
 
           {/* Products Masonry Grid */}
           {data && data.results.length > 0 && (
-            <MasonryGrid products={data.results} userId={user?.id} />
+            <MasonryGrid products={data.results} userId={userId} />
           )}
 
           {/* Empty State */}
