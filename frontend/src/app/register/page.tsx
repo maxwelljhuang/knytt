@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { useAuth } from "@/lib/queries/auth";
+import { useAuth, useRegister } from "@/lib/queries/auth";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input, Button } from "@/components/ui";
@@ -30,7 +30,8 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { register: registerUser, isLoading, registerError, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const registerMutation = useRegister();
   const router = useRouter();
 
   const {
@@ -49,7 +50,14 @@ export default function RegisterPage() {
   }, [isAuthenticated, router]);
 
   const onSubmit = (data: RegisterFormData) => {
-    registerUser({ email: data.email, password: data.password });
+    registerMutation.mutate(
+      { email: data.email, password: data.password },
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+      }
+    );
   };
 
   return (
@@ -68,13 +76,13 @@ export default function RegisterPage() {
           </div>
 
           {/* Error Message */}
-          {registerError && (
+          {registerMutation.error && (
             <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg animate-slide-down">
               <p className="text-red-700 text-sm font-medium flex items-center gap-2">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                {(registerError as any)?.message || "Registration failed. Please try again."}
+                {registerMutation.error.message || "Registration failed. Please try again."}
               </p>
             </div>
           )}
@@ -117,7 +125,7 @@ export default function RegisterPage() {
               type="submit"
               variant="primary"
               size="lg"
-              loading={isLoading}
+              loading={registerMutation.isPending}
               className="w-full"
             >
               Create Account
