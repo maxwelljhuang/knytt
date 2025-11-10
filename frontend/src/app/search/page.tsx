@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useInView } from "react-intersection-observer";
 import { SearchBar } from "@/components/search";
 import { ProductGrid } from "@/components/products";
@@ -8,6 +9,7 @@ import { useInfiniteSearch } from "@/lib/queries/search";
 import { useAuth } from "@/lib/queries/auth";
 
 export default function SearchPage() {
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const { user } = useAuth();
@@ -15,6 +17,15 @@ export default function SearchPage() {
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0,
   });
+
+  // Auto-search if query parameter exists in URL
+  useEffect(() => {
+    const queryParam = searchParams.get("q");
+    if (queryParam && queryParam.trim()) {
+      setSearchQuery(queryParam);
+      setHasSearched(true);
+    }
+  }, [searchParams]);
 
   // Use infinite search hook for pagination
   const {
@@ -63,6 +74,7 @@ export default function SearchPage() {
           <SearchBar
             onSearch={handleSearch}
             isLoading={isLoading}
+            initialQuery={searchQuery}
             className="max-w-3xl"
           />
         </div>

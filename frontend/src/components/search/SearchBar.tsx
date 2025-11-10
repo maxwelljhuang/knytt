@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { Search, X } from "lucide-react";
 
 interface SearchBarProps {
@@ -8,6 +8,7 @@ interface SearchBarProps {
   placeholder?: string;
   className?: string;
   isLoading?: boolean;
+  initialQuery?: string;
 }
 
 export function SearchBar({
@@ -15,8 +16,16 @@ export function SearchBar({
   placeholder = "Search for products...",
   className = "",
   isLoading = false,
+  initialQuery = "",
 }: SearchBarProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
+
+  // Update query when initialQuery changes
+  useEffect(() => {
+    if (initialQuery) {
+      setQuery(initialQuery);
+    }
+  }, [initialQuery]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

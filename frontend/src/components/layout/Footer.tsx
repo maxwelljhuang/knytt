@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
 import { Github, Twitter, Instagram } from "lucide-react";
 
 export function Footer() {
@@ -8,9 +11,24 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-sage to-ivory rounded-full flex items-center justify-center">
-                <span className="text-evergreen font-bold text-lg">K</span>
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12 flex-shrink-0">
+                <Image
+                  src="/knytt-logo-circle.png"
+                  alt="Knytt Logo"
+                  width={48}
+                  height={48}
+                  className="rounded-full"
+                  onError={(e) => {
+                    // Fallback if logo not found
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = `
+                      <div class="w-12 h-12 bg-gradient-to-br from-sage to-ivory rounded-full flex items-center justify-center">
+                        <span class="text-evergreen font-bold text-xl">K</span>
+                      </div>
+                    `;
+                  }}
+                />
               </div>
               <span className="text-2xl font-bold">Knytt</span>
             </div>

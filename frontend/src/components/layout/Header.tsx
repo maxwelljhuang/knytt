@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Search, Heart, ShoppingBag, User, LogOut, Settings, History, Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -80,11 +81,27 @@ export function Header() {
           </button>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-pinterest-red rounded-full flex items-center justify-center shadow-md group-hover:shadow-xl transition-all group-hover:scale-110">
-              <span className="text-white font-bold text-lg">K</span>
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="relative w-12 h-12 flex-shrink-0">
+              <Image
+                src="/knytt-logo-circle.png"
+                alt="Knytt Logo"
+                width={48}
+                height={48}
+                className="rounded-full shadow-md group-hover:shadow-xl transition-all group-hover:scale-110"
+                priority
+                onError={(e) => {
+                  // Fallback if logo not found
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement!.innerHTML = `
+                    <div class="w-12 h-12 bg-evergreen rounded-full flex items-center justify-center shadow-md group-hover:shadow-xl transition-all group-hover:scale-110">
+                      <span class="text-white font-bold text-xl">K</span>
+                    </div>
+                  `;
+                }}
+              />
             </div>
-            <span className="text-2xl font-bold text-charcoal group-hover:text-pinterest-red transition-colors duration-[var(--duration-fast)]">
+            <span className="text-2xl font-bold text-evergreen group-hover:text-sage transition-colors duration-[var(--duration-fast)]">
               Knytt
             </span>
           </Link>

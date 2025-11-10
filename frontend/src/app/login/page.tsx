@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth, useLogin } from "@/lib/queries/auth";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -52,8 +53,24 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-blush">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 bg-pinterest-red rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-2xl">K</span>
+            <div className="w-16 h-16 mx-auto mb-4 relative">
+              <Image
+                src="/knytt-logo-circle.png"
+                alt="Knytt Logo"
+                width={64}
+                height={64}
+                className="rounded-full shadow-lg"
+                priority
+                onError={(e) => {
+                  // Fallback if logo not found
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement!.innerHTML = `
+                    <div class="w-16 h-16 mx-auto bg-evergreen rounded-full flex items-center justify-center shadow-lg">
+                      <span class="text-white font-bold text-2xl">K</span>
+                    </div>
+                  `;
+                }}
+              />
             </div>
             <h1 className="text-4xl font-bold text-charcoal mb-2">
               Welcome Back
