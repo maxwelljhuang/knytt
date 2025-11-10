@@ -11,11 +11,11 @@ terraform {
     }
   }
 
-  # Uncomment to use GCS backend for state
-  # backend "gcs" {
-  #   bucket = "knytt-terraform-state"
-  #   prefix = "terraform/state"
-  # }
+  # GCS backend for state - enables state persistence across CI/CD runs
+  backend "gcs" {
+    bucket = "knytt-backend-terraform-state"
+    prefix = "prod/terraform/state"
+  }
 }
 
 # =====================================================
