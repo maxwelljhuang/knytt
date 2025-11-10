@@ -502,7 +502,7 @@ resource "google_cloud_scheduler_job" "rebuild_faiss_index" {
   description      = "Weekly FAISS index rebuild"
   schedule         = "0 3 * * 0"  # 3 AM every Sunday
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "3600s"  # 1 hour
+  attempt_deadline = "1800s"  # 30 minutes (maximum allowed by Cloud Scheduler)
 
   http_target {
     http_method = "POST"

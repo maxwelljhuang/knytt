@@ -58,9 +58,10 @@ import {
 }
 
 import {
-  to = google_cloud_scheduler_job.rebuild_faiss_index
-  id = "projects/${var.project_id}/locations/${var.region}/jobs/knytt-rebuild-faiss-${var.environment}"
+  to = google_cloud_scheduler_job.generate_embeddings
+  id = "projects/${var.project_id}/locations/${var.region}/jobs/knytt-generate-embeddings-${var.environment}"
 }
 
 # Note: Secret versions and IAM bindings will be managed by Terraform after initial import
 # Cloud Run API service is recreated fresh on each deployment
+# rebuild_faiss_index job will be created fresh (doesn't exist yet)
