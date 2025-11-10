@@ -195,7 +195,7 @@ export function PriceRangeSelector({
           onClick={handleComplete}
           disabled={
             isPending ||
-            (priceMin && priceMax && parseFloat(priceMin) > parseFloat(priceMax))
+            !!(priceMin && priceMax && parseFloat(priceMin) > parseFloat(priceMax))
           }
           className="flex-1 px-6 py-3 rounded-full font-medium bg-pinterest-red text-white hover:bg-dark-red transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95"
         >

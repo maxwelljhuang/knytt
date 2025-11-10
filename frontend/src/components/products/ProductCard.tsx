@@ -46,7 +46,7 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
     }
 
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: product.product_id,
       interaction_type: InteractionType.LIKE,
     });
@@ -76,7 +76,7 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
 
     // Track interaction in background
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: product.product_id,
       interaction_type: InteractionType.ADD_TO_CART,
     });
@@ -87,7 +87,7 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
   const handleCardClick = () => {
     if (userId) {
       feedbackMutation.mutate({
-        user_id: userId,
+        user_id: String(userId),
         product_id: product.product_id,
         interaction_type: InteractionType.CLICK,
       });

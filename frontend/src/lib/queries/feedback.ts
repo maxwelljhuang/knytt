@@ -65,7 +65,7 @@ export function useTrackView() {
 
   return (userId: number, productId: string, context?: string) => {
     return trackInteraction.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.VIEW,
       context,
@@ -83,7 +83,7 @@ export function useTrackClick() {
 
   return (userId: number, productId: string, context?: string, position?: number) => {
     return trackInteraction.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.CLICK,
       context,
@@ -102,7 +102,7 @@ export function useTrackLike() {
 
   return (userId: number, productId: string, context?: string) => {
     return trackInteraction.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.LIKE,
       context,
