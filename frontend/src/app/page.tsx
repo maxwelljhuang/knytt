@@ -10,7 +10,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
-  const userId = user?.id ? Number(user.id) : undefined;
+  const userId = user?.id;
 
   // Fetch personalized recommendations for authenticated users
   const { data: recommendedData, isLoading: recommendationsLoading } = useFeed(userId);
@@ -64,7 +64,7 @@ export default function HomePage() {
                   <RecommendationCarousel
                     title=""
                     products={recommendedData.results}
-                    userId={userId}
+                    userId={userId ? Number(userId) : undefined}
                     context="homepage_recommendations"
                   />
                 </div>
@@ -99,7 +99,7 @@ export default function HomePage() {
 
           {/* Products Masonry Grid */}
           {data && data.results.length > 0 && (
-            <MasonryGrid products={data.results} userId={userId} />
+            <MasonryGrid products={data.results} userId={userId ? Number(userId) : undefined} />
           )}
 
           {/* Empty State */}

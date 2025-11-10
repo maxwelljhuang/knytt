@@ -24,7 +24,7 @@ export function ProductActions({
     if (!userId) return; // Skip if not authenticated
     setIsLiked(!isLiked);
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.LIKE,
     });
@@ -36,7 +36,7 @@ export function ProductActions({
 
     setIsAddedToCart(true);
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.ADD_TO_CART,
     });

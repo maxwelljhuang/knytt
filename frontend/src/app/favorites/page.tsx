@@ -11,8 +11,10 @@ import { InteractionType } from "@/types/enums";
 export default function FavoritesPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const userId = user?.id ? Number(user.id) : undefined;
-  const { data: favorites, isLoading: favoritesLoading } = useFavorites(userId);
+  const userId = user?.id;
+  const { data: favorites, isLoading: favoritesLoading } = useFavorites(
+    userId ? Number(userId) : undefined
+  );
   const removeFavorite = useRemoveFavorite();
   const feedbackMutation = useTrackInteraction();
 
@@ -26,7 +28,7 @@ export default function FavoritesPage() {
     e.preventDefault();
     e.stopPropagation();
     if (!userId) return;
-    removeFavorite.mutate({ userId, productId });
+    removeFavorite.mutate({ userId: Number(userId), productId });
   };
 
   const handleAddToCart = (productId: string, e: React.MouseEvent) => {

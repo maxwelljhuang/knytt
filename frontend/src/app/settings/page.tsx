@@ -23,7 +23,9 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const userId = user?.id;
-  const { data: stats, isLoading: statsLoading } = useUserStats(userId);
+  const { data: stats, isLoading: statsLoading } = useUserStats(
+    userId ? Number(userId) : undefined
+  );
   const updatePreferences = useUpdatePreferences();
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
@@ -41,7 +43,7 @@ export default function SettingsPage() {
   const handleSavePreferences = () => {
     if (!userId) return;
     updatePreferences.mutate({
-      userId,
+      userId: Number(userId),
       preferences: {
         preferred_categories: preferredCategories.length > 0 ? preferredCategories : undefined,
         price_band_min: priceMin ? parseFloat(priceMin) : undefined,

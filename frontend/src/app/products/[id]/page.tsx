@@ -47,7 +47,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (productId && user?.id) {
       feedbackMutation.mutate({
-        user_id: Number(user.id),
+        user_id: user.id,
         product_id: productId,
         interaction_type: InteractionType.VIEW,
       });
