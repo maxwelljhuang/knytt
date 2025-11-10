@@ -7,6 +7,9 @@ import { ProductGrid } from "@/components/products";
 import { useInfiniteSearch } from "@/lib/queries/search";
 import { useAuth } from "@/lib/queries/auth";
 
+// Force dynamic rendering for search page
+export const dynamic = "force-dynamic";
+
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
