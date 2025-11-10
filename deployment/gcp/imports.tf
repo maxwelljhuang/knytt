@@ -37,5 +37,11 @@ import {
   id = "projects/${var.project_id}/locations/${var.region}/connectors/knytt-vpc-connector-${var.environment}"
 }
 
+import {
+  to = google_cloud_run_v2_service.worker
+  id = "projects/${var.project_id}/locations/${var.region}/services/knytt-worker-${var.environment}"
+}
+
 # Note: Secret versions and IAM bindings will be managed by Terraform after initial import
-# Cloud Run services and Cloud Scheduler jobs may need separate imports if they exist
+# Cloud Run API service is recreated fresh on each deployment
+# Cloud Scheduler jobs may need separate imports if they exist

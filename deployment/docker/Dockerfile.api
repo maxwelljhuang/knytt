@@ -27,9 +27,11 @@ FROM base as dependencies
 
 # Copy requirements
 COPY requirements.txt .
+COPY requirements-ml.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies (API + ML dependencies)
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements-ml.txt
 
 # =====================================================
 # Production Stage
