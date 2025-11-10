@@ -12,7 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
  * Hook to get personalized feed recommendations
  */
 export function useFeed(
-  userId: number | undefined,
+  userId: string | undefined,
   options?: Omit<UseQueryOptions<RecommendResponse>, "queryKey" | "queryFn">
 ) {
   return useQuery({
@@ -51,7 +51,7 @@ export function useFeed(
  */
 export function useSimilarProducts(
   productId: string | undefined,
-  userId?: number,
+  userId?: string,
   options?: Omit<UseQueryOptions<RecommendResponse>, "queryKey" | "queryFn">
 ) {
   return useQuery({

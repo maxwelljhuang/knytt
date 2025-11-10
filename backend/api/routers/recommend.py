@@ -97,19 +97,66 @@ async def recommend(
 
     logger.debug(f"Cache MISS for user {request.user_id}, context={request.context}")
 
-    # Step 1: Load user embeddings
+    # Step 1: Load user embeddings from cache
     user_embeddings = cache.get_user_embeddings(request.user_id)
     long_term_embedding = user_embeddings.get("long_term")
     session_embedding = user_embeddings.get("session") if request.use_session_context else None
+
+    # Fallback to database if not in cache
+    if long_term_embedding is None or (request.use_session_context and session_embedding is None):
+        logger.info(f"Cache miss for user {request.user_id}, querying database")
+        from ...db.models import UserEmbedding
+        from uuid import UUID
+        import numpy as np
+
+        try:
+            # Convert user_id string to UUID for database query
+            user_uuid = UUID(request.user_id)
+
+            # Query database for user embeddings
+            user_embedding_record = db.query(UserEmbedding).filter(
+                UserEmbedding.user_id == user_uuid
+            ).first()
+
+            if user_embedding_record:
+                # Extract long-term embedding from database
+                if long_term_embedding is None and user_embedding_record.long_term_embedding:
+                    emb_data = user_embedding_record.long_term_embedding
+                    if isinstance(emb_data, (list, tuple)):
+                        long_term_embedding = np.array(emb_data, dtype=np.float32)
+                    elif isinstance(emb_data, np.ndarray):
+                        long_term_embedding = emb_data.astype(np.float32)
+
+                    # Cache for future requests
+                    cache.set_user_long_term_embedding(request.user_id, long_term_embedding)
+                    logger.info(f"Loaded long-term embedding from database for user {request.user_id}")
+
+                # Extract session embedding from database if needed
+                if request.use_session_context and session_embedding is None and user_embedding_record.session_embedding:
+                    sess_data = user_embedding_record.session_embedding
+                    if isinstance(sess_data, (list, tuple)):
+                        session_embedding = np.array(sess_data, dtype=np.float32)
+                    elif isinstance(sess_data, np.ndarray):
+                        session_embedding = sess_data.astype(np.float32)
+
+                    # Cache for future requests
+                    cache.set_user_session_embedding(request.user_id, session_embedding)
+                    logger.info(f"Loaded session embedding from database for user {request.user_id}")
+            else:
+                logger.warning(f"No user embedding record found in database for user {request.user_id}")
+        except ValueError as e:
+            logger.error(f"Invalid user UUID format: {request.user_id}, error: {e}")
+        except Exception as e:
+            logger.error(f"Error loading embeddings from database: {e}", exc_info=True)
 
     has_long_term_profile = long_term_embedding is not None
     has_session_context = session_embedding is not None
 
     # Validate user has embeddings
     if not has_long_term_profile and not has_session_context:
-        logger.warning(f"No embeddings found for user {request.user_id}")
+        logger.warning(f"No embeddings found for user {request.user_id} in cache or database")
         raise SearchError(
-            message="User has no preference profile",
+            message="User has no preference profile. Please complete onboarding first.",
             details={"user_id": request.user_id},
             status_code=404
         )

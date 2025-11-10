@@ -35,7 +35,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post(
     "/register",
-    response_model=UserResponse,
+    response_model=TokenResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         400: {"model": ErrorResponse, "description": "Email already registered"},
@@ -43,12 +43,14 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 )
 async def register(
     request: UserRegisterRequest,
+    response: Response,
     db: Session = Depends(get_db),
-) -> UserResponse:
+) -> TokenResponse:
     """
-    Register a new user account.
+    Register a new user account and automatically log them in.
 
-    Creates a new user with hashed password. Email must be unique.
+    Creates a new user with hashed password and issues JWT tokens as httpOnly cookies.
+    Email must be unique.
     """
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == request.email).first()
@@ -71,7 +73,41 @@ async def register(
     db.commit()
     db.refresh(new_user)
 
-    return UserResponse.model_validate(new_user)
+    # Automatically log in the user by creating tokens
+    token_data = {"sub": str(new_user.id), "email": new_user.email}
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+
+    # Set httpOnly cookies
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=7 * 24 * 60 * 60,  # 7 days
+    )
+
+    # Update last login
+    new_user.last_login = datetime.utcnow()
+    new_user.last_active = datetime.utcnow()
+    db.commit()
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserResponse.model_validate(new_user)
+    )
 
 
 @router.post(
@@ -143,8 +179,10 @@ async def login(
 
     return TokenResponse(
         access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserResponse.model_validate(user)
     )
 
 

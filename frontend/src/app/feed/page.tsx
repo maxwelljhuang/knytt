@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAuth } from "@/lib/queries/auth";
 import { useFeed } from "@/lib/queries/recommendations";
 import { RecommendationCarousel } from "@/components/recommendations/RecommendationCarousel";
@@ -10,15 +11,16 @@ import Link from "next/link";
 export default function FeedPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const userId = user?.id ? Number(user.id) : undefined;
+  const userId = user?.id;
 
   const { data: feedData, isLoading: feedLoading } = useFeed(userId);
 
   // Redirect to login if not authenticated
-  if (!authLoading && !isAuthenticated) {
-    router.push("/login?redirect=/feed");
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login?redirect=/feed");
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   if (authLoading || feedLoading) {
     return (

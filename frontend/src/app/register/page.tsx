@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useAuth, useRegister } from "@/lib/queries/auth";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Input, Button } from "@/components/ui";
 import { Mail, Lock, ArrowLeft } from "lucide-react";
 
@@ -30,9 +31,10 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const registerMutation = useRegister();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -42,19 +44,29 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  // Redirect if already logged in
+  // Redirect if already logged in and onboarded
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user?.onboarded) {
       router.push("/");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user?.onboarded, router]);
 
   const onSubmit = (data: RegisterFormData) => {
     registerMutation.mutate(
       { email: data.email, password: data.password },
       {
-        onSuccess: () => {
-          router.push("/");
+        onSuccess: async (response) => {
+          // Invalidate and refetch auth to ensure state is updated
+          await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+
+          // Wait for auth state to be confirmed
+          await queryClient.refetchQueries({ queryKey: ["auth", "me"] });
+
+          // Small additional delay to ensure React state updates
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // Now redirect to onboarding
+          router.replace("/onboarding");
         },
       }
     );

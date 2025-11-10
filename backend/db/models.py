@@ -51,6 +51,8 @@ class User(Base):
                            comment='Whether email has been verified')
     last_login = Column(TIMESTAMP, nullable=True,
                        comment='Timestamp of last successful login')
+    onboarded = Column(Boolean, nullable=False, server_default='false',
+                      comment='Whether user has completed onboarding')
 
     # Timestamps
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.now())

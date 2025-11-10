@@ -3,6 +3,8 @@ Authentication request/response schemas.
 Pydantic models for user registration, login, and token management.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -43,8 +45,10 @@ class UserLoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     """Response schema for token issuance."""
     access_token: str = Field(..., description="JWT access token")
+    refresh_token: Optional[str] = Field(None, description="JWT refresh token")
     token_type: str = Field(default="bearer", description="Token type")
     expires_in: int = Field(..., description="Token expiration time in seconds")
+    user: Optional["UserResponse"] = Field(None, description="User information")
 
 
 class RefreshTokenRequest(BaseModel):
@@ -63,6 +67,7 @@ class UserResponse(BaseModel):
 
     # Personalization status
     total_interactions: int = Field(default=0, description="Total number of interactions")
+    onboarded: bool = Field(default=False, description="Whether user has completed onboarding")
 
     model_config = {
         "from_attributes": True  # Allow ORM model conversion
@@ -104,3 +109,7 @@ class ErrorResponse(BaseModel):
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
     details: Optional[dict] = Field(None, description="Additional error details")
+
+
+# Rebuild models to resolve forward references
+TokenResponse.model_rebuild()

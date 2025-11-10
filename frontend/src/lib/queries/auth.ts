@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface User {
   id: string;
@@ -14,6 +14,7 @@ interface User {
   created_at: string;
   last_login?: string;
   total_interactions?: number;
+  onboarded: boolean;
 }
 
 interface RegisterRequest {
@@ -30,6 +31,8 @@ interface TokenResponse {
   access_token: string;
   token_type: string;
   expires_in: number;
+  refresh_token?: string;
+  user?: User;
 }
 
 /**
@@ -78,7 +81,7 @@ export function useRegister() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: RegisterRequest): Promise<User> => {
+    mutationFn: async (data: RegisterRequest): Promise<TokenResponse> => {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
@@ -95,7 +98,11 @@ export function useRegister() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Set the user data in the cache after successful registration
+      if (data.user) {
+        queryClient.setQueryData(["auth", "me"], data.user);
+      }
       queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
     },
   });

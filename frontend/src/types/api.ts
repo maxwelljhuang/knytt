@@ -18,7 +18,7 @@ export type { ProductResult, FilterParams };
  */
 export interface SearchRequest {
   query: string; // Required, 1-500 characters
-  user_id?: number; // Optional, for personalization
+  user_id?: string; // Optional, for personalization (UUID)
   filters?: FilterParams;
   offset?: number; // Default: 0
   limit?: number; // Default: 20, max: 100
@@ -36,7 +36,7 @@ export interface SearchResponse {
   limit: number;
   page: number; // Current page (1-indexed)
   query: string; // Echo of search query
-  user_id?: number;
+  user_id?: string;
   search_time_ms: number; // Time spent on vector search
   total_time_ms: number; // Total request time
   personalized: boolean; // Whether user personalization was applied
@@ -53,7 +53,7 @@ export interface SearchResponse {
  * Request body for personalized recommendations.
  */
 export interface RecommendRequest {
-  user_id: number; // Required
+  user_id: string; // Required (UUID)
   context?: RecommendationContext; // Default: "feed"
 
   // Context-specific parameters (required based on context)
@@ -81,7 +81,7 @@ export interface RecommendResponse {
   offset: number;
   limit: number;
   page: number;
-  user_id: number;
+  user_id: string;
   context: string; // Recommendation context used
   recommendation_time_ms: number;
   total_time_ms: number;
@@ -109,7 +109,7 @@ export interface RecommendResponse {
  * Request body for user interaction feedback.
  */
 export interface FeedbackRequest {
-  user_id: number; // Required
+  user_id: string; // Required (UUID)
   product_id: string; // Required
   interaction_type: InteractionType; // Required
 
@@ -133,7 +133,7 @@ export interface FeedbackResponse {
   success: boolean;
   message: string;
   interaction_id?: number;
-  user_id: number;
+  user_id: string;
   product_id: string;
   interaction_type: string;
   embeddings_updated: boolean;

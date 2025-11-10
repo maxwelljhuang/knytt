@@ -167,12 +167,12 @@ class EmbeddingCache:
 
     # ========== User Embeddings ==========
 
-    def get_user_long_term_embedding(self, user_id: int) -> Optional[np.ndarray]:
+    def get_user_long_term_embedding(self, user_id: str) -> Optional[np.ndarray]:
         """
         Get cached user long-term embedding.
 
         Args:
-            user_id: User ID
+            user_id: User ID (UUID string)
 
         Returns:
             User embedding or None if not cached
@@ -182,14 +182,14 @@ class EmbeddingCache:
 
     def set_user_long_term_embedding(
         self,
-        user_id: int,
+        user_id: str,
         embedding: np.ndarray
     ) -> bool:
         """
         Cache user long-term embedding.
 
         Args:
-            user_id: User ID
+            user_id: User ID (UUID string)
             embedding: User embedding
 
         Returns:
@@ -198,12 +198,12 @@ class EmbeddingCache:
         key = f"{self.USER_LONG_TERM_PREFIX}{user_id}"
         return self.redis.set(key, embedding, ttl=self.user_ttl)
 
-    def get_user_session_embedding(self, user_id: int) -> Optional[np.ndarray]:
+    def get_user_session_embedding(self, user_id: str) -> Optional[np.ndarray]:
         """
         Get cached user session embedding.
 
         Args:
-            user_id: User ID
+            user_id: User ID (UUID string)
 
         Returns:
             Session embedding or None if not cached
@@ -213,7 +213,7 @@ class EmbeddingCache:
 
     def set_user_session_embedding(
         self,
-        user_id: int,
+        user_id: str,
         embedding: np.ndarray,
         ttl: Optional[int] = None
     ) -> bool:
@@ -221,7 +221,7 @@ class EmbeddingCache:
         Cache user session embedding.
 
         Args:
-            user_id: User ID
+            user_id: User ID (UUID string)
             embedding: Session embedding
             ttl: TTL in seconds (default: 30 minutes for sessions)
 
@@ -234,13 +234,13 @@ class EmbeddingCache:
 
     def get_user_embeddings(
         self,
-        user_id: int
+        user_id: str
     ) -> Dict[str, Optional[np.ndarray]]:
         """
         Get both long-term and session embeddings for a user.
 
         Args:
-            user_id: User ID
+            user_id: User ID (UUID string)
 
         Returns:
             Dict with 'long_term' and 'session' embeddings
@@ -253,12 +253,12 @@ class EmbeddingCache:
             'session': session
         }
 
-    def delete_user_embeddings(self, user_id: int) -> int:
+    def delete_user_embeddings(self, user_id: str) -> int:
         """
         Invalidate all cached embeddings for a user.
 
         Args:
-            user_id: User ID
+            user_id: User ID (UUID string)
 
         Returns:
             Number of keys deleted

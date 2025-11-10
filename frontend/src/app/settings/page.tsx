@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/queries/auth";
 import { useUserStats, useUpdatePreferences } from "@/lib/queries/user";
 import {
@@ -22,7 +22,7 @@ type TabType = "profile" | "preferences" | "stats";
 export default function SettingsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const userId = user?.id ? Number(user.id) : undefined;
+  const userId = user?.id;
   const { data: stats, isLoading: statsLoading } = useUserStats(userId);
   const updatePreferences = useUpdatePreferences();
 
@@ -32,10 +32,11 @@ export default function SettingsPage() {
   const [priceMax, setPriceMax] = useState<string>("");
 
   // Redirect to login if not authenticated
-  if (!authLoading && !isAuthenticated) {
-    router.push("/login?redirect=/settings");
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login?redirect=/settings");
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const handleSavePreferences = () => {
     if (!userId) return;

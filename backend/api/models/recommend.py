@@ -30,7 +30,7 @@ class RecommendRequest(BaseModel):
     """
 
     # User context (required for personalization)
-    user_id: int = Field(..., description="User ID for personalized recommendations")
+    user_id: str = Field(..., description="User ID (UUID) for personalized recommendations")
 
     # Recommendation context
     context: RecommendationContext = Field(
@@ -111,7 +111,7 @@ class RecommendResponse(BaseModel):
     page: int = Field(..., description="Current page (1-indexed)")
 
     # Request info
-    user_id: int = Field(..., description="User ID")
+    user_id: str = Field(..., description="User ID (UUID)")
     context: str = Field(..., description="Recommendation context")
 
     # Performance metrics
