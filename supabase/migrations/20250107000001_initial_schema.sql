@@ -252,12 +252,16 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply triggers to tables with updated_at
+-- Drop existing triggers first to make migration idempotent
+DROP TRIGGER IF EXISTS update_products_updated_at ON products;
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_profiles_updated_at ON user_profiles;
 CREATE TRIGGER update_user_profiles_updated_at BEFORE UPDATE ON user_profiles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_embeddings_updated_at ON user_embeddings;
 CREATE TRIGGER update_user_embeddings_updated_at BEFORE UPDATE ON user_embeddings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -273,40 +277,51 @@ ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
 
 -- Products are public (read-only for users)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Products are viewable by everyone" ON products;
 CREATE POLICY "Products are viewable by everyone" ON products
     FOR SELECT USING (true);
 
 -- User profiles
+DROP POLICY IF EXISTS "Users can view public profiles" ON user_profiles;
 CREATE POLICY "Users can view public profiles" ON user_profiles
     FOR SELECT USING (is_public = true OR auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
 CREATE POLICY "Users can update own profile" ON user_profiles
     FOR UPDATE USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
 CREATE POLICY "Users can insert own profile" ON user_profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- User embeddings (private)
+DROP POLICY IF EXISTS "Users can view own embeddings" ON user_embeddings;
 CREATE POLICY "Users can view own embeddings" ON user_embeddings
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own embeddings" ON user_embeddings;
 CREATE POLICY "Users can update own embeddings" ON user_embeddings
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own embeddings" ON user_embeddings;
 CREATE POLICY "Users can insert own embeddings" ON user_embeddings
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- User interactions
+DROP POLICY IF EXISTS "Users can view own interactions" ON user_interactions;
 CREATE POLICY "Users can view own interactions" ON user_interactions
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own interactions" ON user_interactions;
 CREATE POLICY "Users can insert own interactions" ON user_interactions
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- User favorites
+DROP POLICY IF EXISTS "Users can view own favorites" ON user_favorites;
 CREATE POLICY "Users can view own favorites" ON user_favorites
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can manage own favorites" ON user_favorites;
 CREATE POLICY "Users can manage own favorites" ON user_favorites
     FOR ALL USING (auth.uid() = user_id);
 
