@@ -147,7 +147,7 @@ export function MasonryGrid({ products, userId }: MasonryGridProps) {
     e.stopPropagation();
     if (!userId) return; // Skip if not authenticated
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.LIKE,
     });
@@ -158,7 +158,7 @@ export function MasonryGrid({ products, userId }: MasonryGridProps) {
     e.stopPropagation();
     if (!userId) return; // Skip if not authenticated
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.ADD_TO_CART,
     });
@@ -167,7 +167,7 @@ export function MasonryGrid({ products, userId }: MasonryGridProps) {
   const handleClick = (productId: string) => {
     if (!userId) return; // Skip if not authenticated
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.CLICK,
     });

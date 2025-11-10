@@ -169,7 +169,7 @@ export function RecommendationCarousel({
     e.stopPropagation();
     if (!userId) return;
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.LIKE,
       context,
@@ -181,7 +181,7 @@ export function RecommendationCarousel({
     e.stopPropagation();
     if (!userId) return;
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.ADD_TO_CART,
       context,
@@ -191,7 +191,7 @@ export function RecommendationCarousel({
   const handleClick = (productId: string) => {
     if (!userId) return;
     feedbackMutation.mutate({
-      user_id: userId,
+      user_id: String(userId),
       product_id: productId,
       interaction_type: InteractionType.CLICK,
       context,
