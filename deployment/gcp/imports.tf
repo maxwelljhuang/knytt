@@ -57,6 +57,10 @@ import {
   id = "projects/${var.project_id}/locations/${var.region}/services/knytt-worker-${var.environment}"
 }
 
+import {
+  to = google_cloud_scheduler_job.rebuild_faiss_index
+  id = "projects/${var.project_id}/locations/${var.region}/jobs/knytt-rebuild-faiss-${var.environment}"
+}
+
 # Note: Secret versions and IAM bindings will be managed by Terraform after initial import
 # Cloud Run API service is recreated fresh on each deployment
-# Cloud Scheduler jobs may need separate imports if they exist
