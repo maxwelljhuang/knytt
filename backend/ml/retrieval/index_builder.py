@@ -13,6 +13,7 @@ from datetime import datetime
 
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class FAISSIndexBuilderError(Exception):
     """Exception raised for FAISS index building errors."""
+
     pass
 
 
@@ -60,7 +62,9 @@ class FAISSIndexBuilder:
         self.dimension = self.config.embedding.product_embedding_dim
         self.index_type = self.config.storage.faiss_index_type
 
-        logger.info(f"Initialized FAISS index builder: type={self.index_type}, dim={self.dimension}")
+        logger.info(
+            f"Initialized FAISS index builder: type={self.index_type}, dim={self.dimension}"
+        )
 
     def create_index(self, index_type: Optional[str] = None) -> "faiss.Index":
         """
@@ -74,11 +78,11 @@ class FAISSIndexBuilder:
         """
         index_type = index_type or self.index_type
 
-        if index_type == 'Flat':
+        if index_type == "Flat":
             return self._create_flat_index()
-        elif index_type == 'IVF':
+        elif index_type == "IVF":
             return self._create_ivf_index()
-        elif index_type == 'HNSW':
+        elif index_type == "HNSW":
             return self._create_hnsw_index()
         else:
             raise FAISSIndexBuilderError(f"Unsupported index type: {index_type}")
@@ -132,10 +136,7 @@ class FAISSIndexBuilder:
         return index
 
     def build_index(
-        self,
-        embeddings: np.ndarray,
-        product_ids: List[int],
-        train_ratio: float = 1.0
+        self, embeddings: np.ndarray, product_ids: List[int], train_ratio: float = 1.0
     ) -> Tuple[faiss.Index, Dict[int, int]]:
         """
         Build and train FAISS index from product embeddings.
@@ -193,10 +194,7 @@ class FAISSIndexBuilder:
         return index, id_mapping
 
     def save_index(
-        self,
-        index: faiss.Index,
-        id_mapping: Dict[int, int],
-        path: Optional[Path] = None
+        self, index: faiss.Index, id_mapping: Dict[int, int], path: Optional[Path] = None
     ) -> Path:
         """
         Save FAISS index and ID mapping to disk.
@@ -230,11 +228,11 @@ class FAISSIndexBuilder:
         # Save metadata
         metadata_file = save_path / "metadata.npy"
         metadata = {
-            'index_type': self.index_type,
-            'dimension': self.dimension,
-            'num_vectors': index.ntotal,
-            'created_at': datetime.utcnow().isoformat(),
-            'model_version': self.config.model_version,
+            "index_type": self.index_type,
+            "dimension": self.dimension,
+            "num_vectors": index.ntotal,
+            "created_at": datetime.utcnow().isoformat(),
+            "model_version": self.config.model_version,
         }
         np.save(metadata_file, metadata, allow_pickle=True)
         logger.info(f"Saved metadata to {metadata_file}")
@@ -275,8 +273,8 @@ class FAISSIndexBuilder:
 
         logger.info(f"Loading ID mapping from {mapping_file}")
         mapping_data = np.load(mapping_file, allow_pickle=True)
-        positions = mapping_data['positions']
-        product_ids = mapping_data['product_ids']
+        positions = mapping_data["positions"]
+        product_ids = mapping_data["product_ids"]
         # Product IDs are UUIDs (strings), keep as strings
         id_mapping = {int(pos): str(pid) for pos, pid in zip(positions, product_ids)}
 
@@ -302,23 +300,23 @@ class FAISSIndexBuilder:
             Dictionary with index statistics
         """
         stats = {
-            'num_vectors': index.ntotal,
-            'dimension': self.dimension,
-            'is_trained': index.is_trained,
+            "num_vectors": index.ntotal,
+            "dimension": self.dimension,
+            "is_trained": index.is_trained,
         }
 
         # Add index-specific stats
         if isinstance(index, faiss.IndexIVFFlat):
-            stats['index_type'] = 'IVF'
-            stats['nlist'] = index.nlist
-            stats['nprobe'] = index.nprobe
+            stats["index_type"] = "IVF"
+            stats["nlist"] = index.nlist
+            stats["nprobe"] = index.nprobe
         elif isinstance(index, faiss.IndexHNSWFlat):
-            stats['index_type'] = 'HNSW'
-            stats['M'] = index.hnsw.M
-            stats['efSearch'] = index.hnsw.efSearch
+            stats["index_type"] = "HNSW"
+            stats["M"] = index.hnsw.M
+            stats["efSearch"] = index.hnsw.efSearch
         elif isinstance(index, faiss.IndexFlatL2):
-            stats['index_type'] = 'Flat'
+            stats["index_type"] = "Flat"
         else:
-            stats['index_type'] = type(index).__name__
+            stats["index_type"] = type(index).__name__
 
         return stats

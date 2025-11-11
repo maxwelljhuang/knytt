@@ -52,7 +52,7 @@ def download_clip_model(model_name: str = None, pretrained: str = None):
     if cache_path.exists() and list(cache_path.glob("*")):
         print(f"ℹ  Cache directory already contains files")
         response = input("Download anyway? [y/N]: ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("Skipping download")
             return
 
@@ -62,9 +62,7 @@ def download_clip_model(model_name: str = None, pretrained: str = None):
     try:
         # Download model
         model, _, preprocess = open_clip.create_model_and_transforms(
-            model_name,
-            pretrained=pretrained,
-            cache_dir=str(cache_path)
+            model_name, pretrained=pretrained, cache_dir=str(cache_path)
         )
 
         print()
@@ -166,24 +164,12 @@ def list_available_models():
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Download CLIP models for GreenThumb"
-    )
+    parser = argparse.ArgumentParser(description="Download CLIP models for GreenThumb")
+    parser.add_argument("--model", type=str, help="Model name (e.g., ViT-B-32, ViT-L-14)")
     parser.add_argument(
-        "--model",
-        type=str,
-        help="Model name (e.g., ViT-B-32, ViT-L-14)"
+        "--pretrained", type=str, help="Pretrained source (e.g., openai, laion2b_s34b_b79k)"
     )
-    parser.add_argument(
-        "--pretrained",
-        type=str,
-        help="Pretrained source (e.g., openai, laion2b_s34b_b79k)"
-    )
-    parser.add_argument(
-        "--list",
-        action="store_true",
-        help="List available models"
-    )
+    parser.add_argument("--list", action="store_true", help="List available models")
 
     args = parser.parse_args()
 

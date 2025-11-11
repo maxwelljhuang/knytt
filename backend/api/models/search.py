@@ -36,13 +36,9 @@ class SearchRequest(BaseModel):
             "example": {
                 "query": "summer dresses",
                 "user_id": 123,
-                "filters": {
-                    "min_price": 30.0,
-                    "max_price": 100.0,
-                    "in_stock": True
-                },
+                "filters": {"min_price": 30.0, "max_price": 100.0, "in_stock": True},
                 "offset": 0,
-                "limit": 20
+                "limit": 20,
             }
         }
 
@@ -113,7 +109,7 @@ class ProductResult(BaseModel):
                 "category_name": "Dresses",
                 "similarity": 0.92,
                 "rank": 0,
-                "final_score": 0.87
+                "final_score": 0.87,
             }
         }
 
@@ -158,7 +154,7 @@ class SearchResponse(BaseModel):
                         "price": 59.99,
                         "image_url": "https://example.com/image.jpg",
                         "similarity": 0.92,
-                        "rank": 0
+                        "rank": 0,
                     }
                 ],
                 "total": 150,
@@ -168,6 +164,6 @@ class SearchResponse(BaseModel):
                 "query": "summer dresses",
                 "search_time_ms": 45.2,
                 "total_time_ms": 78.5,
-                "cached": False
+                "cached": False,
             }
         }

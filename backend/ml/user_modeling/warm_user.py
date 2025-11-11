@@ -35,7 +35,7 @@ class WarmUserEmbedding:
         self,
         current_embedding: np.ndarray,
         interaction_embedding: np.ndarray,
-        interaction_weight: float = 1.0
+        interaction_weight: float = 1.0,
     ) -> np.ndarray:
         """
         Update user embedding with new interaction using EWMA.
@@ -56,8 +56,7 @@ class WarmUserEmbedding:
 
         # EWMA update
         new_embedding = (
-            adjusted_alpha * current_embedding +
-            (1.0 - adjusted_alpha) * interaction_embedding
+            adjusted_alpha * current_embedding + (1.0 - adjusted_alpha) * interaction_embedding
         )
 
         # Normalize
@@ -67,10 +66,7 @@ class WarmUserEmbedding:
         return new_embedding
 
     def update_from_interaction(
-        self,
-        user_id: str,
-        current_embedding: np.ndarray,
-        interaction: Dict[str, Any]
+        self, user_id: str, current_embedding: np.ndarray, interaction: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Update user embedding from a single interaction.
@@ -89,31 +85,31 @@ class WarmUserEmbedding:
             Dict with updated embedding and metadata
         """
         result = {
-            'user_id': user_id,
-            'updated_embedding': None,
-            'success': False,
+            "user_id": user_id,
+            "updated_embedding": None,
+            "success": False,
         }
 
         # Get product embedding
-        product_emb = interaction.get('product_embedding')
+        product_emb = interaction.get("product_embedding")
         if product_emb is None:
             logger.error(f"No product embedding in interaction for user {user_id}")
-            result['error'] = 'no_product_embedding'
+            result["error"] = "no_product_embedding"
             return result
 
         # Determine interaction weight
-        interaction_type = interaction.get('interaction_type', 'view')
+        interaction_type = interaction.get("interaction_type", "view")
         weights = {
-            'view': 0.5,
-            'like': 1.0,
-            'dislike': -0.5,  # Negative interaction
-            'add_to_cart': 1.5,
-            'purchase': 2.0,
+            "view": 0.5,
+            "like": 1.0,
+            "dislike": -0.5,  # Negative interaction
+            "add_to_cart": 1.5,
+            "purchase": 2.0,
         }
         weight = weights.get(interaction_type, 1.0)
 
-        result['interaction_type'] = interaction_type
-        result['interaction_weight'] = weight
+        result["interaction_type"] = interaction_type
+        result["interaction_weight"] = weight
 
         # Handle negative interactions (dislikes)
         if weight < 0:
@@ -124,25 +120,19 @@ class WarmUserEmbedding:
 
         # Update embedding
         try:
-            updated_embedding = self.update_embedding(
-                current_embedding,
-                product_emb,
-                weight
-            )
+            updated_embedding = self.update_embedding(current_embedding, product_emb, weight)
 
-            result['updated_embedding'] = updated_embedding
-            result['success'] = True
+            result["updated_embedding"] = updated_embedding
+            result["success"] = True
 
         except Exception as e:
             logger.error(f"Failed to update embedding for user {user_id}: {e}")
-            result['error'] = str(e)
+            result["error"] = str(e)
 
         return result
 
     def update_from_batch(
-        self,
-        current_embedding: np.ndarray,
-        interactions: List[Dict[str, Any]]
+        self, current_embedding: np.ndarray, interactions: List[Dict[str, Any]]
     ) -> np.ndarray:
         """
         Update user embedding from multiple interactions.
@@ -157,17 +147,17 @@ class WarmUserEmbedding:
         embedding = current_embedding.copy()
 
         for interaction in interactions:
-            product_emb = interaction.get('product_embedding')
+            product_emb = interaction.get("product_embedding")
             if product_emb is None:
                 continue
 
-            interaction_type = interaction.get('interaction_type', 'view')
+            interaction_type = interaction.get("interaction_type", "view")
             weights = {
-                'view': 0.5,
-                'like': 1.0,
-                'dislike': -0.5,
-                'add_to_cart': 1.5,
-                'purchase': 2.0,
+                "view": 0.5,
+                "like": 1.0,
+                "dislike": -0.5,
+                "add_to_cart": 1.5,
+                "purchase": 2.0,
             }
             weight = weights.get(interaction_type, 1.0)
 
@@ -181,11 +171,7 @@ class WarmUserEmbedding:
 
         return embedding
 
-    def compute_drift(
-        self,
-        old_embedding: np.ndarray,
-        new_embedding: np.ndarray
-    ) -> float:
+    def compute_drift(self, old_embedding: np.ndarray, new_embedding: np.ndarray) -> float:
         """
         Compute how much user taste has drifted.
 
@@ -218,9 +204,7 @@ def get_warm_user_updater() -> WarmUserEmbedding:
 
 
 def update_user_from_interaction(
-    current_embedding: np.ndarray,
-    product_embedding: np.ndarray,
-    interaction_type: str = 'like'
+    current_embedding: np.ndarray, product_embedding: np.ndarray, interaction_type: str = "like"
 ) -> np.ndarray:
     """
     Convenience function to update user embedding.
@@ -236,15 +220,15 @@ def update_user_from_interaction(
     updater = get_warm_user_updater()
 
     result = updater.update_from_interaction(
-        user_id='temp',
+        user_id="temp",
         current_embedding=current_embedding,
         interaction={
-            'product_embedding': product_embedding,
-            'interaction_type': interaction_type,
-        }
+            "product_embedding": product_embedding,
+            "interaction_type": interaction_type,
+        },
     )
 
-    if result['success']:
-        return result['updated_embedding']
+    if result["success"]:
+        return result["updated_embedding"]
     else:
         raise ValueError(f"Update failed: {result.get('error')}")

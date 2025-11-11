@@ -30,8 +30,7 @@ class APISettings(BaseSettings):
 
     # CORS settings
     cors_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8080"],
-        alias="API_CORS_ORIGINS"
+        default=["http://localhost:3000", "http://localhost:8080"], alias="API_CORS_ORIGINS"
     )
     cors_allow_credentials: bool = True
     cors_allow_methods: List[str] = ["*"]
@@ -39,8 +38,7 @@ class APISettings(BaseSettings):
 
     # Database settings
     database_url: str = Field(
-        default="postgresql://user:password@localhost:5432/greenthumb",
-        alias="DATABASE_URL"
+        default="postgresql://user:password@localhost:5432/greenthumb", alias="DATABASE_URL"
     )
     db_pool_size: int = Field(default=20, alias="DB_POOL_SIZE")
     db_max_overflow: int = Field(default=10, alias="DB_MAX_OVERFLOW")
@@ -75,10 +73,7 @@ class APISettings(BaseSettings):
 
     # ML settings
     ml_model_version: str = Field(default="v1.0-clip-vit-b32", alias="ML_MODEL_VERSION")
-    faiss_index_path: str = Field(
-        default="models/cache/faiss_index",
-        alias="FAISS_INDEX_PATH"
-    )
+    faiss_index_path: str = Field(default="models/cache/faiss_index", alias="FAISS_INDEX_PATH")
 
     # Feature flags
     enable_text_search: bool = Field(default=True, alias="API_ENABLE_TEXT_SEARCH")
@@ -104,7 +99,7 @@ class APISettings(BaseSettings):
         extra="ignore",  # Ignore extra fields in .env file
         env_prefix="",  # No prefix for environment variables
         validate_default=True,
-        populate_by_name=True  # Allow using both field name and alias for env vars
+        populate_by_name=True,  # Allow using both field name and alias for env vars
     )
 
 

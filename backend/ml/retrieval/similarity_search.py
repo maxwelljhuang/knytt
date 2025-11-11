@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class SimilaritySearchError(Exception):
     """Exception raised for similarity search errors."""
+
     pass
 
 
@@ -30,6 +32,7 @@ class SearchResult:
     """
     Single search result with product information and relevance score.
     """
+
     product_id: int
     distance: float  # L2 distance from FAISS
     similarity: float  # Converted to [0, 1] similarity score
@@ -41,11 +44,11 @@ class SearchResult:
     def to_dict(self) -> dict:
         """Convert to dictionary for API responses."""
         return {
-            'product_id': self.product_id,
-            'distance': float(self.distance),
-            'similarity': float(self.similarity),
-            'rank': self.rank,
-            'metadata': self.metadata,
+            "product_id": self.product_id,
+            "distance": float(self.distance),
+            "similarity": float(self.similarity),
+            "rank": self.rank,
+            "metadata": self.metadata,
         }
 
 
@@ -54,6 +57,7 @@ class SearchResults:
     """
     Collection of search results with query metadata.
     """
+
     results: List[SearchResult]
     query_vector_shape: Tuple[int, ...]
     k: int  # Number of results requested
@@ -63,10 +67,10 @@ class SearchResults:
     def to_dict(self) -> dict:
         """Convert to dictionary for API responses."""
         return {
-            'results': [r.to_dict() for r in self.results],
-            'k': self.k,
-            'total_found': self.total_found,
-            'search_time_ms': float(self.search_time_ms),
+            "results": [r.to_dict() for r in self.results],
+            "k": self.k,
+            "total_found": self.total_found,
+            "search_time_ms": float(self.search_time_ms),
         }
 
     def get_product_ids(self) -> List[int]:
@@ -86,9 +90,7 @@ class SimilaritySearch:
     """
 
     def __init__(
-        self,
-        config: Optional[MLConfig] = None,
-        index_manager: Optional[FAISSIndexManager] = None
+        self, config: Optional[MLConfig] = None, index_manager: Optional[FAISSIndexManager] = None
     ):
         """
         Initialize similarity search.
@@ -103,10 +105,7 @@ class SimilaritySearch:
         logger.info("Similarity search initialized")
 
     def search(
-        self,
-        query_vector: np.ndarray,
-        k: int = 50,
-        min_similarity: Optional[float] = None
+        self, query_vector: np.ndarray, k: int = 50, min_similarity: Optional[float] = None
     ) -> SearchResults:
         """
         Search for k nearest neighbors of query vector.
@@ -123,6 +122,7 @@ class SimilaritySearch:
             SimilaritySearchError: If search fails
         """
         import time
+
         start_time = time.time()
 
         # Validate input
@@ -134,9 +134,7 @@ class SimilaritySearch:
             )
 
         if query_vector.shape[0] != 1:
-            raise SimilaritySearchError(
-                "Use search_batch() for multiple query vectors"
-            )
+            raise SimilaritySearchError("Use search_batch() for multiple query vectors")
 
         # Ensure vector is float32
         query_vector = query_vector.astype(np.float32)
@@ -160,10 +158,7 @@ class SimilaritySearch:
 
         # Convert to SearchResults
         results = self._format_results(
-            distances[0],
-            indices[0],
-            id_mapping,
-            min_similarity=min_similarity
+            distances[0], indices[0], id_mapping, min_similarity=min_similarity
         )
 
         search_time_ms = (time.time() - start_time) * 1000
@@ -173,14 +168,11 @@ class SimilaritySearch:
             query_vector_shape=query_vector.shape,
             k=k,
             total_found=len(results),
-            search_time_ms=search_time_ms
+            search_time_ms=search_time_ms,
         )
 
     def search_batch(
-        self,
-        query_vectors: np.ndarray,
-        k: int = 50,
-        min_similarity: Optional[float] = None
+        self, query_vectors: np.ndarray, k: int = 50, min_similarity: Optional[float] = None
     ) -> List[SearchResults]:
         """
         Search for k nearest neighbors for multiple query vectors.
@@ -197,6 +189,7 @@ class SimilaritySearch:
             SimilaritySearchError: If search fails
         """
         import time
+
         start_time = time.time()
 
         # Validate input
@@ -231,21 +224,20 @@ class SimilaritySearch:
         batch_results = []
         for i in range(len(query_vectors)):
             results = self._format_results(
-                distances[i],
-                indices[i],
-                id_mapping,
-                min_similarity=min_similarity
+                distances[i], indices[i], id_mapping, min_similarity=min_similarity
             )
 
             search_time_ms = (time.time() - start_time) * 1000 / len(query_vectors)
 
-            batch_results.append(SearchResults(
-                results=results,
-                query_vector_shape=query_vectors[i:i+1].shape,
-                k=k,
-                total_found=len(results),
-                search_time_ms=search_time_ms
-            ))
+            batch_results.append(
+                SearchResults(
+                    results=results,
+                    query_vector_shape=query_vectors[i : i + 1].shape,
+                    k=k,
+                    total_found=len(results),
+                    search_time_ms=search_time_ms,
+                )
+            )
 
         return batch_results
 
@@ -254,7 +246,7 @@ class SimilaritySearch:
         product_id: int,
         k: int = 50,
         exclude_self: bool = True,
-        min_similarity: Optional[float] = None
+        min_similarity: Optional[float] = None,
     ) -> SearchResults:
         """
         Find similar products to a given product.
@@ -275,9 +267,7 @@ class SimilaritySearch:
         faiss_idx = self.index_manager.get_faiss_position(product_id)
 
         if faiss_idx is None:
-            raise SimilaritySearchError(
-                f"Product ID {product_id} not found in FAISS index"
-            )
+            raise SimilaritySearchError(f"Product ID {product_id} not found in FAISS index")
 
         # Get vector for this product from index
         index = self.index_manager.get_index()
@@ -290,10 +280,7 @@ class SimilaritySearch:
 
         # Filter out self if needed
         if exclude_self:
-            results.results = [
-                r for r in results.results
-                if r.product_id != product_id
-            ][:k]
+            results.results = [r for r in results.results if r.product_id != product_id][:k]
             results.total_found = len(results.results)
 
             # Re-rank results
@@ -307,7 +294,7 @@ class SimilaritySearch:
         distances: np.ndarray,
         indices: np.ndarray,
         id_mapping: Dict[int, int],
-        min_similarity: Optional[float] = None
+        min_similarity: Optional[float] = None,
     ) -> List[SearchResult]:
         """
         Format raw FAISS results into SearchResult objects.
@@ -341,12 +328,14 @@ class SimilaritySearch:
             if min_similarity is not None and similarity < min_similarity:
                 continue
 
-            results.append(SearchResult(
-                product_id=product_id,
-                distance=float(distance),
-                similarity=similarity,
-                rank=rank
-            ))
+            results.append(
+                SearchResult(
+                    product_id=product_id,
+                    distance=float(distance),
+                    similarity=similarity,
+                    rank=rank,
+                )
+            )
 
         return results
 
@@ -371,7 +360,7 @@ class SimilaritySearch:
 
         # For normalized vectors, convert L2 to cosine similarity
         # Cosine similarity is in [-1, 1], we map it to [0, 1]
-        cosine_sim = 1.0 - (distance ** 2 / 2.0)
+        cosine_sim = 1.0 - (distance**2 / 2.0)
 
         # Clamp to [-1, 1] to handle numerical errors
         cosine_sim = max(-1.0, min(1.0, cosine_sim))

@@ -16,16 +16,18 @@ logger = logging.getLogger(__name__)
 
 class PerformanceThreshold(Enum):
     """Performance threshold levels."""
-    EXCELLENT = 50      # < 50ms
-    GOOD = 100          # < 100ms
-    ACCEPTABLE = 150    # < 150ms (target p95)
-    SLOW = 300          # < 300ms
-    CRITICAL = 1000     # < 1000ms
+
+    EXCELLENT = 50  # < 50ms
+    GOOD = 100  # < 100ms
+    ACCEPTABLE = 150  # < 150ms (target p95)
+    SLOW = 300  # < 300ms
+    CRITICAL = 1000  # < 1000ms
 
 
 @dataclass
 class OperationMetric:
     """Single operation performance metric."""
+
     operation: str
     duration_ms: float
     timestamp: datetime
@@ -73,7 +75,7 @@ class PerformanceMonitor:
                 "total_time_ms": 0,
                 "errors": 0,
                 "cache_hits": 0,
-                "cache_misses": 0
+                "cache_misses": 0,
             }
         )
 
@@ -88,7 +90,7 @@ class PerformanceMonitor:
         query: Optional[str] = None,
         result_count: Optional[int] = None,
         cached: bool = False,
-        error: Optional[str] = None
+        error: Optional[str] = None,
     ):
         """
         Record an operation metric.
@@ -112,7 +114,7 @@ class PerformanceMonitor:
             query=query,
             result_count=result_count,
             cached=cached,
-            error=error
+            error=error,
         )
 
         # Store metric
@@ -162,7 +164,7 @@ class PerformanceMonitor:
                 "p99": 0.0,
                 "mean": 0.0,
                 "min": 0.0,
-                "max": 0.0
+                "max": 0.0,
             }
 
         sorted_durations = sorted(durations)
@@ -175,7 +177,7 @@ class PerformanceMonitor:
             "p99": sorted_durations[int(count * 0.99)],
             "mean": sum(sorted_durations) / count,
             "min": sorted_durations[0],
-            "max": sorted_durations[-1]
+            "max": sorted_durations[-1],
         }
 
     def get_endpoint_stats(self, endpoint: Optional[str] = None) -> Dict[str, Any]:
@@ -193,9 +195,9 @@ class PerformanceMonitor:
             if stats.get("count", 0) > 0:
                 stats["avg_time_ms"] = stats["total_time_ms"] / stats["count"]
                 stats["cache_hit_rate"] = (
-                    stats["cache_hits"] /
-                    (stats["cache_hits"] + stats["cache_misses"]) * 100
-                    if (stats["cache_hits"] + stats["cache_misses"]) > 0 else 0
+                    stats["cache_hits"] / (stats["cache_hits"] + stats["cache_misses"]) * 100
+                    if (stats["cache_hits"] + stats["cache_misses"]) > 0
+                    else 0
                 )
             return stats
 
@@ -206,9 +208,11 @@ class PerformanceMonitor:
             if ep_stats["count"] > 0:
                 ep_stats["avg_time_ms"] = ep_stats["total_time_ms"] / ep_stats["count"]
                 ep_stats["cache_hit_rate"] = (
-                    ep_stats["cache_hits"] /
-                    (ep_stats["cache_hits"] + ep_stats["cache_misses"]) * 100
-                    if (ep_stats["cache_hits"] + ep_stats["cache_misses"]) > 0 else 0
+                    ep_stats["cache_hits"]
+                    / (ep_stats["cache_hits"] + ep_stats["cache_misses"])
+                    * 100
+                    if (ep_stats["cache_hits"] + ep_stats["cache_misses"]) > 0
+                    else 0
                 )
             all_stats[ep] = ep_stats
 
@@ -262,7 +266,7 @@ class PerformanceMonitor:
                 "p99_ms": sorted_all[int(count * 0.99)],
                 "mean_ms": sum(sorted_all) / count,
                 "min_ms": sorted_all[0],
-                "max_ms": sorted_all[-1]
+                "max_ms": sorted_all[-1],
             }
         else:
             overall_stats = {
@@ -272,7 +276,7 @@ class PerformanceMonitor:
                 "p99_ms": 0,
                 "mean_ms": 0,
                 "min_ms": 0,
-                "max_ms": 0
+                "max_ms": 0,
             }
 
         # Per-operation breakdown
@@ -302,7 +306,7 @@ class PerformanceMonitor:
             "endpoints": self.get_endpoint_stats(),
             "slow_query_count": len(self.slow_queries),
             "error_count": len(self.errors),
-            "metrics_tracked": len(self.metrics)
+            "metrics_tracked": len(self.metrics),
         }
 
     def get_optimization_recommendations(self) -> List[Dict[str, str]]:
@@ -321,38 +325,44 @@ class PerformanceMonitor:
 
             avg_time = stats["total_time_ms"] / stats["count"]
             cache_hit_rate = (
-                stats["cache_hits"] /
-                (stats["cache_hits"] + stats["cache_misses"]) * 100
-                if (stats["cache_hits"] + stats["cache_misses"]) > 0 else 0
+                stats["cache_hits"] / (stats["cache_hits"] + stats["cache_misses"]) * 100
+                if (stats["cache_hits"] + stats["cache_misses"]) > 0
+                else 0
             )
 
             # Slow endpoint
             if avg_time > PerformanceThreshold.ACCEPTABLE.value:
-                recommendations.append({
-                    "priority": "high",
-                    "endpoint": endpoint,
-                    "issue": f"Slow average response time ({avg_time:.0f}ms)",
-                    "recommendation": "Optimize query, add indexes, or increase cache TTL"
-                })
+                recommendations.append(
+                    {
+                        "priority": "high",
+                        "endpoint": endpoint,
+                        "issue": f"Slow average response time ({avg_time:.0f}ms)",
+                        "recommendation": "Optimize query, add indexes, or increase cache TTL",
+                    }
+                )
 
             # Low cache hit rate
             if cache_hit_rate < 50 and stats["cache_hits"] + stats["cache_misses"] > 100:
-                recommendations.append({
-                    "priority": "medium",
-                    "endpoint": endpoint,
-                    "issue": f"Low cache hit rate ({cache_hit_rate:.1f}%)",
-                    "recommendation": "Increase cache TTL or implement cache warming"
-                })
+                recommendations.append(
+                    {
+                        "priority": "medium",
+                        "endpoint": endpoint,
+                        "issue": f"Low cache hit rate ({cache_hit_rate:.1f}%)",
+                        "recommendation": "Increase cache TTL or implement cache warming",
+                    }
+                )
 
             # High error rate
             error_rate = stats["errors"] / stats["count"] * 100
             if error_rate > 5:
-                recommendations.append({
-                    "priority": "critical",
-                    "endpoint": endpoint,
-                    "issue": f"High error rate ({error_rate:.1f}%)",
-                    "recommendation": "Investigate and fix errors immediately"
-                })
+                recommendations.append(
+                    {
+                        "priority": "critical",
+                        "endpoint": endpoint,
+                        "issue": f"High error rate ({error_rate:.1f}%)",
+                        "recommendation": "Investigate and fix errors immediately",
+                    }
+                )
 
         # Check operation performance
         for operation, durations in self.operation_stats.items():
@@ -362,12 +372,14 @@ class PerformanceMonitor:
             stats = self.get_operation_stats(operation)
 
             if stats["p95"] > PerformanceThreshold.ACCEPTABLE.value:
-                recommendations.append({
-                    "priority": "high",
-                    "operation": operation,
-                    "issue": f"Slow p95 latency ({stats['p95']:.0f}ms)",
-                    "recommendation": "Profile and optimize this operation"
-                })
+                recommendations.append(
+                    {
+                        "priority": "high",
+                        "operation": operation,
+                        "issue": f"Slow p95 latency ({stats['p95']:.0f}ms)",
+                        "recommendation": "Profile and optimize this operation",
+                    }
+                )
 
         return recommendations
 

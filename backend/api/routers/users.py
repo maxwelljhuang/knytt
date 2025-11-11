@@ -38,8 +38,7 @@ async def get_user_favorites(
     liked_interactions = (
         db.query(UserInteraction)
         .filter(
-            UserInteraction.user_id == current_user.id,
-            UserInteraction.interaction_type == "like"
+            UserInteraction.user_id == current_user.id, UserInteraction.interaction_type == "like"
         )
         .order_by(desc(UserInteraction.created_at))
         .all()
@@ -52,32 +51,28 @@ async def get_user_favorites(
     products = db.query(Product).filter(Product.product_id.in_(product_ids)).all()
 
     # Create a map of product_id to liked_at timestamp
-    liked_at_map = {
-        i.product_id: i.created_at
-        for i in liked_interactions
-    }
+    liked_at_map = {i.product_id: i.created_at for i in liked_interactions}
 
     # Build response
     favorites = []
     for product in products:
-        favorites.append(FavoriteProduct(
-            product_id=product.product_id,
-            title=product.title,
-            price=product.price,
-            currency=product.currency or "$",
-            image_url=product.image_url,
-            brand=product.brand,
-            in_stock=product.in_stock,
-            liked_at=liked_at_map.get(product.product_id, datetime.utcnow())
-        ))
+        favorites.append(
+            FavoriteProduct(
+                product_id=product.product_id,
+                title=product.title,
+                price=product.price,
+                currency=product.currency or "$",
+                image_url=product.image_url,
+                brand=product.brand,
+                in_stock=product.in_stock,
+                liked_at=liked_at_map.get(product.product_id, datetime.utcnow()),
+            )
+        )
 
     # Sort by liked_at descending
     favorites.sort(key=lambda x: x.liked_at, reverse=True)
 
-    return FavoritesResponse(
-        favorites=favorites,
-        total=len(favorites)
-    )
+    return FavoritesResponse(favorites=favorites, total=len(favorites))
 
 
 @router.delete("/me/favorites/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -95,7 +90,7 @@ async def remove_favorite(
         .filter(
             UserInteraction.user_id == current_user.id,
             UserInteraction.product_id == product_id,
-            UserInteraction.interaction_type == "like"
+            UserInteraction.interaction_type == "like",
         )
         .delete()
     )
@@ -103,10 +98,7 @@ async def remove_favorite(
     db.commit()
 
     if deleted_count == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Favorite not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Favorite not found")
 
     return None
 
@@ -137,34 +129,27 @@ async def get_interaction_history(
     total = query.count()
 
     # Get paginated results
-    results = (
-        query
-        .order_by(desc(UserInteraction.created_at))
-        .limit(limit)
-        .offset(offset)
-        .all()
-    )
+    results = query.order_by(desc(UserInteraction.created_at)).limit(limit).offset(offset).all()
 
     # Build response
     interactions = []
     for interaction, product in results:
-        interactions.append(InteractionHistoryItem(
-            interaction_id=interaction.id,
-            product_id=interaction.product_id,
-            product_title=product.title if product else None,
-            product_image_url=product.image_url if product else None,
-            product_price=product.price if product else None,
-            interaction_type=interaction.interaction_type,
-            created_at=interaction.created_at,
-            context=interaction.context,
-            query=interaction.query,
-        ))
+        interactions.append(
+            InteractionHistoryItem(
+                interaction_id=interaction.id,
+                product_id=interaction.product_id,
+                product_title=product.title if product else None,
+                product_image_url=product.image_url if product else None,
+                product_price=product.price if product else None,
+                interaction_type=interaction.interaction_type,
+                created_at=interaction.created_at,
+                context=interaction.context,
+                query=interaction.query,
+            )
+        )
 
     return InteractionHistoryResponse(
-        interactions=interactions,
-        total=total,
-        offset=offset,
-        limit=limit
+        interactions=interactions, total=total, offset=offset, limit=limit
     )
 
 
@@ -178,10 +163,7 @@ async def get_user_stats(
     """
     # Get interaction counts by type
     interaction_counts = (
-        db.query(
-            UserInteraction.interaction_type,
-            func.count(UserInteraction.id).label('count')
-        )
+        db.query(UserInteraction.interaction_type, func.count(UserInteraction.id).label("count"))
         .filter(UserInteraction.user_id == current_user.id)
         .group_by(UserInteraction.interaction_type)
         .all()
@@ -191,43 +173,31 @@ async def get_user_stats(
 
     # Get favorite categories (top interacted categories)
     category_stats = (
-        db.query(
-            Product.category,
-            func.count(UserInteraction.id).label('interaction_count')
-        )
+        db.query(Product.category, func.count(UserInteraction.id).label("interaction_count"))
         .join(UserInteraction, Product.product_id == UserInteraction.product_id)
         .filter(UserInteraction.user_id == current_user.id)
         .filter(Product.category.isnot(None))
         .group_by(Product.category)
-        .order_by(desc('interaction_count'))
+        .order_by(desc("interaction_count"))
         .limit(10)
         .all()
     )
 
-    favorite_categories = [
-        {"category": row[0], "count": row[1]}
-        for row in category_stats
-    ]
+    favorite_categories = [{"category": row[0], "count": row[1]} for row in category_stats]
 
     # Get favorite brands
     brand_stats = (
-        db.query(
-            Product.brand,
-            func.count(UserInteraction.id).label('interaction_count')
-        )
+        db.query(Product.brand, func.count(UserInteraction.id).label("interaction_count"))
         .join(UserInteraction, Product.product_id == UserInteraction.product_id)
         .filter(UserInteraction.user_id == current_user.id)
         .filter(Product.brand.isnot(None))
         .group_by(Product.brand)
-        .order_by(desc('interaction_count'))
+        .order_by(desc("interaction_count"))
         .limit(10)
         .all()
     )
 
-    favorite_brands = [
-        {"brand": row[0], "count": row[1]}
-        for row in brand_stats
-    ]
+    favorite_brands = [{"brand": row[0], "count": row[1]} for row in brand_stats]
 
     # Get average price point
     avg_price = (
@@ -242,16 +212,16 @@ async def get_user_stats(
 
     return UserStatsResponse(
         total_interactions=current_user.total_interactions,
-        total_views=counts_map.get('view', 0),
-        total_clicks=counts_map.get('click', 0),
-        total_likes=counts_map.get('like', 0),
-        total_cart_adds=counts_map.get('add_to_cart', 0),
-        total_purchases=counts_map.get('purchase', 0),
+        total_views=counts_map.get("view", 0),
+        total_clicks=counts_map.get("click", 0),
+        total_likes=counts_map.get("like", 0),
+        total_cart_adds=counts_map.get("add_to_cart", 0),
+        total_purchases=counts_map.get("purchase", 0),
         favorite_categories=favorite_categories,
         favorite_brands=favorite_brands,
         avg_price_point=float(avg_price) if avg_price else None,
         account_age_days=account_age,
-        last_active=current_user.last_active
+        last_active=current_user.last_active,
     )
 
 

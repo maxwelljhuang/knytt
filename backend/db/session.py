@@ -9,10 +9,7 @@ import os
 
 # Get database URL from environment
 # Default to local Supabase PostgreSQL
-DATABASE_URL = os.getenv(
-    'DATABASE_URL',
-    'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
-)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:54322/postgres")
 
 # Create engine
 engine = create_engine(

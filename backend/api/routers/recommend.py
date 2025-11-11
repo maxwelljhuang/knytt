@@ -37,7 +37,7 @@ async def recommend(
     cache: EmbeddingCache = Depends(get_embedding_cache),
     cache_service: CacheService = Depends(get_cache_service),
     settings: APISettings = Depends(get_settings),
-    request_id: str = Depends(get_request_id)
+    request_id: str = Depends(get_request_id),
 ) -> RecommendResponse:
     """
     Generate personalized product recommendations for a user.
@@ -70,7 +70,7 @@ async def recommend(
 
     logger.info(
         f"Recommend request: user_id={request.user_id}, context={request.context}",
-        extra={"request_id": request_id}
+        extra={"request_id": request_id},
     )
 
     # Track user activity for cache warming
@@ -89,7 +89,7 @@ async def recommend(
         if cached_response:
             logger.info(
                 f"Cache HIT for user {request.user_id}, context={request.context}",
-                extra={"request_id": request_id}
+                extra={"request_id": request_id},
             )
             cached_response["cached"] = True
             cached_response["total_time_ms"] = (time.time() - start_time) * 1000
@@ -114,9 +114,9 @@ async def recommend(
             user_uuid = UUID(request.user_id)
 
             # Query database for user embeddings
-            user_embedding_record = db.query(UserEmbedding).filter(
-                UserEmbedding.user_id == user_uuid
-            ).first()
+            user_embedding_record = (
+                db.query(UserEmbedding).filter(UserEmbedding.user_id == user_uuid).first()
+            )
 
             if user_embedding_record:
                 # Extract long-term embedding from database
@@ -129,10 +129,16 @@ async def recommend(
 
                     # Cache for future requests
                     cache.set_user_long_term_embedding(request.user_id, long_term_embedding)
-                    logger.info(f"Loaded long-term embedding from database for user {request.user_id}")
+                    logger.info(
+                        f"Loaded long-term embedding from database for user {request.user_id}"
+                    )
 
                 # Extract session embedding from database if needed
-                if request.use_session_context and session_embedding is None and user_embedding_record.session_embedding:
+                if (
+                    request.use_session_context
+                    and session_embedding is None
+                    and user_embedding_record.session_embedding
+                ):
                     sess_data = user_embedding_record.session_embedding
                     if isinstance(sess_data, (list, tuple)):
                         session_embedding = np.array(sess_data, dtype=np.float32)
@@ -141,9 +147,13 @@ async def recommend(
 
                     # Cache for future requests
                     cache.set_user_session_embedding(request.user_id, session_embedding)
-                    logger.info(f"Loaded session embedding from database for user {request.user_id}")
+                    logger.info(
+                        f"Loaded session embedding from database for user {request.user_id}"
+                    )
             else:
-                logger.warning(f"No user embedding record found in database for user {request.user_id}")
+                logger.warning(
+                    f"No user embedding record found in database for user {request.user_id}"
+                )
         except ValueError as e:
             logger.error(f"Invalid user UUID format: {request.user_id}, error: {e}")
         except Exception as e:
@@ -158,7 +168,7 @@ async def recommend(
         raise SearchError(
             message="User has no preference profile. Please complete onboarding first.",
             details={"user_id": request.user_id},
-            status_code=404
+            status_code=404,
         )
 
     # Step 2: Build query vector based on context
@@ -169,10 +179,7 @@ async def recommend(
         # General feed: blend long-term and session
         if has_long_term_profile and has_session_context:
             # Blend both
-            query_vector = (
-                0.6 * long_term_embedding +
-                0.4 * session_embedding
-            )
+            query_vector = 0.6 * long_term_embedding + 0.4 * session_embedding
             blend_weights = {"long_term": 0.6, "session": 0.4}
         elif has_long_term_profile:
             query_vector = long_term_embedding
@@ -184,10 +191,7 @@ async def recommend(
     elif request.context == RecommendationContext.SEARCH:
         # Search-based: blend query + user embeddings
         if not request.search_query:
-            raise SearchError(
-                message="search_query required for context=search",
-                status_code=400
-            )
+            raise SearchError(message="search_query required for context=search", status_code=400)
 
         try:
             query_embedding = text_encoder.encode_query(request.search_query)
@@ -195,15 +199,12 @@ async def recommend(
             logger.error(f"Failed to encode query: {e}")
             raise SearchError(
                 message="Failed to encode search query",
-                details={"query": request.search_query, "error": str(e)}
+                details={"query": request.search_query, "error": str(e)},
             )
 
         # Blend query with user profile
         if has_long_term_profile:
-            query_vector = (
-                0.7 * query_embedding +
-                0.3 * long_term_embedding
-            )
+            query_vector = 0.7 * query_embedding + 0.3 * long_term_embedding
             blend_weights = {"query": 0.7, "long_term": 0.3}
         else:
             query_vector = query_embedding
@@ -212,32 +213,21 @@ async def recommend(
     elif request.context == RecommendationContext.SIMILAR:
         # Similar products: get product embedding + blend with user
         if not request.product_id:
-            raise SearchError(
-                message="product_id required for context=similar",
-                status_code=400
-            )
+            raise SearchError(message="product_id required for context=similar", status_code=400)
 
         # Get product embedding from cache or database
-        product_embedding = _get_product_embedding(
-            request.product_id,
-            search_service,
-            cache,
-            db
-        )
+        product_embedding = _get_product_embedding(request.product_id, search_service, cache, db)
 
         if product_embedding is None:
             raise SearchError(
                 message="Product not found",
                 details={"product_id": request.product_id},
-                status_code=404
+                status_code=404,
             )
 
         # Blend product with user profile
         if has_long_term_profile:
-            query_vector = (
-                0.8 * product_embedding +
-                0.2 * long_term_embedding
-            )
+            query_vector = 0.8 * product_embedding + 0.2 * long_term_embedding
             blend_weights = {"product": 0.8, "long_term": 0.2}
         else:
             query_vector = product_embedding
@@ -246,10 +236,7 @@ async def recommend(
     elif request.context == RecommendationContext.CATEGORY:
         # Category-based: use long-term profile with category filter
         if not request.category_id:
-            raise SearchError(
-                message="category_id required for context=category",
-                status_code=400
-            )
+            raise SearchError(message="category_id required for context=category", status_code=400)
 
         query_vector = long_term_embedding if has_long_term_profile else session_embedding
         blend_weights = {"long_term": 1.0} if has_long_term_profile else {"session": 1.0}
@@ -257,6 +244,7 @@ async def recommend(
         # Add category filter
         if not request.filters:
             from ..models.common import FilterParams
+
             request.filters = FilterParams()
         if not request.filters.category_ids:
             request.filters.category_ids = []
@@ -282,24 +270,21 @@ async def recommend(
     if filters:
         filtered_search = FilteredSimilaritySearch(
             index_manager=search_service.personalized_search.index_manager,
-            db_session_factory=lambda: db
+            db_session_factory=lambda: db,
         )
 
         ml_results = filtered_search.search_with_filters(
             query_vector=query_vector,
             filters=filters,
             k=request.limit * 2,  # Get more for better results after enrichment
-            session=db
+            session=db,
         )
     else:
         similarity_search = SimilaritySearch(
             index_manager=search_service.personalized_search.index_manager
         )
 
-        ml_results = similarity_search.search(
-            query_vector=query_vector,
-            k=request.limit * 2
-        )
+        ml_results = similarity_search.search(query_vector=query_vector, k=request.limit * 2)
 
     recommendation_time_ms = (time.time() - recommend_start) * 1000
 
@@ -319,13 +304,11 @@ async def recommend(
 
     # Step 6: Enrich with metadata
     enriched_results = metadata_service.enrich_results(
-        product_ids=product_ids,
-        scores=scores,
-        db=db
+        product_ids=product_ids, scores=scores, db=db
     )
 
     # Step 7: Apply pagination
-    paginated_results = enriched_results[request.offset:request.offset + request.limit]
+    paginated_results = enriched_results[request.offset : request.offset + request.limit]
 
     # Step 8: Build response
     total_time_ms = (time.time() - start_time) * 1000
@@ -355,7 +338,7 @@ async def recommend(
 
     logger.info(
         f"Recommendation completed: {len(enriched_results)} results in {total_time_ms:.2f}ms",
-        extra={"request_id": request_id}
+        extra={"request_id": request_id},
     )
 
     return RecommendResponse(**response_data)
@@ -390,6 +373,7 @@ def _generate_cache_key(request: RecommendRequest) -> str:
 
     if request.filters:
         from ..routers.search import _hash_filters
+
         key_parts.append(f"filters:{_hash_filters(request.filters)}")
 
     key_string = "|".join(key_parts)
@@ -410,10 +394,7 @@ def _get_cached_response(cache_key: str, cache: EmbeddingCache) -> Optional[Dict
 
 
 def _cache_response(
-    cache_key: str,
-    response_data: Dict[str, Any],
-    cache: EmbeddingCache,
-    ttl: int
+    cache_key: str, response_data: Dict[str, Any], cache: EmbeddingCache, ttl: int
 ) -> bool:
     """Cache recommendation response."""
     try:
@@ -421,8 +402,7 @@ def _cache_response(
         cacheable_data = response_data.copy()
         if "results" in cacheable_data:
             cacheable_data["results"] = [
-                r.dict() if hasattr(r, 'dict') else r
-                for r in cacheable_data["results"]
+                r.dict() if hasattr(r, "dict") else r for r in cacheable_data["results"]
             ]
 
         return cache.redis.set(cache_key, cacheable_data, ttl=ttl)
@@ -432,10 +412,7 @@ def _cache_response(
 
 
 def _get_product_embedding(
-    product_id: str,
-    search_service: SearchService,
-    cache: EmbeddingCache,
-    db: Session = None
+    product_id: str, search_service: SearchService, cache: EmbeddingCache, db: Session = None
 ) -> Optional[Any]:
     """
     Get product embedding from cache or database.

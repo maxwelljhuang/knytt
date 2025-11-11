@@ -15,13 +15,14 @@ class InteractionType(str, Enum):
 
     Different types of user-product interactions for tracking behavior.
     """
-    VIEW = "view"               # User viewed product details
-    CLICK = "click"             # User clicked on product in search/recommendation
-    ADD_TO_CART = "add_to_cart" # User added product to cart
-    PURCHASE = "purchase"       # User purchased product
-    LIKE = "like"               # User favorited/liked product
-    SHARE = "share"             # User shared product
-    RATING = "rating"           # User rated product
+
+    VIEW = "view"  # User viewed product details
+    CLICK = "click"  # User clicked on product in search/recommendation
+    ADD_TO_CART = "add_to_cart"  # User added product to cart
+    PURCHASE = "purchase"  # User purchased product
+    LIKE = "like"  # User favorited/liked product
+    SHARE = "share"  # User shared product
+    RATING = "rating"  # User rated product
 
 
 class FeedbackRequest(BaseModel):
@@ -40,47 +41,35 @@ class FeedbackRequest(BaseModel):
 
     # Optional interaction metadata
     rating: Optional[float] = Field(
-        None,
-        ge=0,
-        le=5,
-        description="Rating value (0-5) for rating interactions"
+        None, ge=0, le=5, description="Rating value (0-5) for rating interactions"
     )
     session_id: Optional[str] = Field(
-        None,
-        max_length=128,
-        description="Session ID for grouping interactions"
+        None, max_length=128, description="Session ID for grouping interactions"
     )
     context: Optional[str] = Field(
         None,
         max_length=64,
-        description="Context where interaction occurred (search, feed, similar, etc.)"
+        description="Context where interaction occurred (search, feed, similar, etc.)",
     )
     query: Optional[str] = Field(
         None,
         max_length=500,
-        description="Search query that led to this interaction (if applicable)"
+        description="Search query that led to this interaction (if applicable)",
     )
     position: Optional[int] = Field(
-        None,
-        ge=0,
-        description="Position of product in results (for CTR analysis)"
+        None, ge=0, description="Position of product in results (for CTR analysis)"
     )
 
     # Additional metadata
     metadata: Optional[Dict[str, Any]] = Field(
-        None,
-        description="Additional interaction metadata (page, referrer, etc.)"
+        None, description="Additional interaction metadata (page, referrer, etc.)"
     )
 
     # Update preferences
     update_embeddings: bool = Field(
-        default=True,
-        description="Whether to trigger user embedding update"
+        default=True, description="Whether to trigger user embedding update"
     )
-    update_session: bool = Field(
-        default=True,
-        description="Whether to update session embeddings"
-    )
+    update_session: bool = Field(default=True, description="Whether to update session embeddings")
 
     class Config:
         json_schema_extra = {
@@ -92,10 +81,7 @@ class FeedbackRequest(BaseModel):
                 "context": "search",
                 "query": "summer dresses",
                 "position": 2,
-                "metadata": {
-                    "page": "search_results",
-                    "device": "mobile"
-                }
+                "metadata": {"page": "search_results", "device": "mobile"},
             }
         }
 
@@ -112,23 +98,22 @@ class FeedbackResponse(BaseModel):
     message: str = Field(default="Feedback recorded", description="Status message")
 
     # Recorded interaction
-    interaction_id: Optional[str] = Field(None, description="Database ID of recorded interaction (UUID)")
+    interaction_id: Optional[str] = Field(
+        None, description="Database ID of recorded interaction (UUID)"
+    )
     user_id: int = Field(..., description="User ID")
     product_id: str = Field(..., description="Product ID (UUID)")
     interaction_type: str = Field(..., description="Type of interaction")
 
     # Update status
     embeddings_updated: bool = Field(
-        default=False,
-        description="Whether user embeddings were updated"
+        default=False, description="Whether user embeddings were updated"
     )
     session_updated: bool = Field(
-        default=False,
-        description="Whether session embeddings were updated"
+        default=False, description="Whether session embeddings were updated"
     )
     cache_invalidated: bool = Field(
-        default=False,
-        description="Whether user's cached recommendations were invalidated"
+        default=False, description="Whether user's cached recommendations were invalidated"
     )
 
     # Timestamps
@@ -148,7 +133,7 @@ class FeedbackResponse(BaseModel):
                 "session_updated": True,
                 "cache_invalidated": True,
                 "recorded_at": "2025-01-15T10:30:00Z",
-                "processing_time_ms": 12.5
+                "processing_time_ms": 12.5,
             }
         }
 

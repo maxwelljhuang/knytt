@@ -44,10 +44,10 @@ class RankingConfig:
     def __post_init__(self):
         """Validate configuration."""
         total = (
-            self.similarity_weight +
-            self.popularity_weight +
-            self.price_affinity_weight +
-            self.brand_match_weight
+            self.similarity_weight
+            + self.popularity_weight
+            + self.price_affinity_weight
+            + self.brand_match_weight
         )
         if abs(total - 1.0) > 1e-6:
             raise ValueError(f"Ranking weights must sum to 1.0, got {total}")
@@ -82,7 +82,7 @@ class PopularityScorer:
         likes: int = 0,
         carts: int = 0,
         purchases: int = 0,
-        last_interaction: Optional[datetime] = None
+        last_interaction: Optional[datetime] = None,
     ) -> float:
         """
         Calculate popularity score for a single product.
@@ -100,10 +100,10 @@ class PopularityScorer:
         """
         # Weighted engagement score
         engagement = (
-            views * self.config.view_weight +
-            likes * self.config.like_weight +
-            carts * self.config.cart_weight +
-            purchases * self.config.purchase_weight
+            views * self.config.view_weight
+            + likes * self.config.like_weight
+            + carts * self.config.cart_weight
+            + purchases * self.config.purchase_weight
         )
 
         # Apply recency decay
@@ -113,10 +113,7 @@ class PopularityScorer:
 
         return engagement
 
-    def score_batch(
-        self,
-        product_stats: Dict[int, Dict[str, Any]]
-    ) -> Dict[int, float]:
+    def score_batch(self, product_stats: Dict[int, Dict[str, Any]]) -> Dict[int, float]:
         """
         Calculate popularity scores for multiple products.
 
@@ -132,11 +129,11 @@ class PopularityScorer:
         for product_id, stats in product_stats.items():
             score = self.score_product(
                 product_id=product_id,
-                views=stats.get('views', 0),
-                likes=stats.get('likes', 0),
-                carts=stats.get('carts', 0),
-                purchases=stats.get('purchases', 0),
-                last_interaction=stats.get('last_interaction')
+                views=stats.get("views", 0),
+                likes=stats.get("likes", 0),
+                carts=stats.get("carts", 0),
+                purchases=stats.get("purchases", 0),
+                last_interaction=stats.get("last_interaction"),
             )
             scores[product_id] = score
 
@@ -187,9 +184,7 @@ class PriceAffinityScorer:
         logger.debug("Price affinity scorer initialized")
 
     def calculate_user_price_profile(
-        self,
-        purchase_prices: List[float],
-        view_prices: List[float] = None
+        self, purchase_prices: List[float], view_prices: List[float] = None
     ) -> Dict[str, float]:
         """
         Calculate user's price preferences from history.
@@ -207,22 +202,18 @@ class PriceAffinityScorer:
                 purchase_prices = view_prices
             else:
                 # No data, return neutral profile
-                return {'mean': 0, 'std': 0, 'min': 0, 'max': float('inf')}
+                return {"mean": 0, "std": 0, "min": 0, "max": float("inf")}
 
         prices = np.array(purchase_prices)
 
         return {
-            'mean': float(np.mean(prices)),
-            'std': float(np.std(prices)),
-            'min': float(np.min(prices)),
-            'max': float(np.max(prices)),
+            "mean": float(np.mean(prices)),
+            "std": float(np.std(prices)),
+            "min": float(np.min(prices)),
+            "max": float(np.max(prices)),
         }
 
-    def score_product(
-        self,
-        product_price: float,
-        user_price_profile: Dict[str, float]
-    ) -> float:
+    def score_product(self, product_price: float, user_price_profile: Dict[str, float]) -> float:
         """
         Score a product based on price affinity to user's preferences.
 
@@ -233,7 +224,7 @@ class PriceAffinityScorer:
         Returns:
             Price affinity score in [0, 1]
         """
-        mean_price = user_price_profile['mean']
+        mean_price = user_price_profile["mean"]
 
         if mean_price == 0:
             # No price data, return neutral score
@@ -258,9 +249,7 @@ class PriceAffinityScorer:
         return max(0.0, min(1.0, score))
 
     def score_batch(
-        self,
-        product_prices: Dict[int, float],
-        user_price_profile: Dict[str, float]
+        self, product_prices: Dict[int, float], user_price_profile: Dict[str, float]
     ) -> Dict[int, float]:
         """
         Score multiple products for price affinity.
@@ -296,9 +285,7 @@ class BrandMatchScorer:
         logger.debug("Brand match scorer initialized")
 
     def calculate_user_brand_preferences(
-        self,
-        brand_interactions: List[int],
-        interaction_weights: Optional[List[float]] = None
+        self, brand_interactions: List[int], interaction_weights: Optional[List[float]] = None
     ) -> Dict[int, float]:
         """
         Calculate user's brand preferences from interaction history.
@@ -330,9 +317,7 @@ class BrandMatchScorer:
         return brand_scores
 
     def score_product(
-        self,
-        product_brand_id: int,
-        user_brand_preferences: Dict[int, float]
+        self, product_brand_id: int, user_brand_preferences: Dict[int, float]
     ) -> float:
         """
         Score a product based on brand match.
@@ -353,9 +338,7 @@ class BrandMatchScorer:
         return user_brand_preferences.get(product_brand_id, 0.0)
 
     def score_batch(
-        self,
-        product_brands: Dict[int, int],
-        user_brand_preferences: Dict[int, float]
+        self, product_brands: Dict[int, int], user_brand_preferences: Dict[int, float]
     ) -> Dict[int, float]:
         """
         Score multiple products for brand match.
@@ -407,7 +390,7 @@ class HeuristicRanker:
         search_results: SearchResults,
         popularity_scores: Optional[Dict[int, float]] = None,
         price_affinity_scores: Optional[Dict[int, float]] = None,
-        brand_match_scores: Optional[Dict[int, float]] = None
+        brand_match_scores: Optional[Dict[int, float]] = None,
     ) -> SearchResults:
         """
         Re-rank search results using multi-signal scoring.
@@ -436,24 +419,21 @@ class HeuristicRanker:
 
             # Calculate weighted score
             final_score = (
-                self.config.similarity_weight * similarity +
-                self.config.popularity_weight * popularity +
-                self.config.price_affinity_weight * price_affinity +
-                self.config.brand_match_weight * brand_match
+                self.config.similarity_weight * similarity
+                + self.config.popularity_weight * popularity
+                + self.config.price_affinity_weight * price_affinity
+                + self.config.brand_match_weight * brand_match
             )
 
             # Store scores in metadata
-            result.metadata['final_score'] = final_score
-            result.metadata['similarity_score'] = similarity
-            result.metadata['popularity_score'] = popularity
-            result.metadata['price_affinity_score'] = price_affinity
-            result.metadata['brand_match_score'] = brand_match
+            result.metadata["final_score"] = final_score
+            result.metadata["similarity_score"] = similarity
+            result.metadata["popularity_score"] = popularity
+            result.metadata["price_affinity_score"] = price_affinity
+            result.metadata["brand_match_score"] = brand_match
 
         # Sort by final score (descending)
-        search_results.results.sort(
-            key=lambda r: r.metadata['final_score'],
-            reverse=True
-        )
+        search_results.results.sort(key=lambda r: r.metadata["final_score"], reverse=True)
 
         # Update ranks
         for i, result in enumerate(search_results.results):
@@ -473,7 +453,7 @@ class HeuristicRanker:
         Returns:
             Explanation string
         """
-        if 'final_score' not in result.metadata:
+        if "final_score" not in result.metadata:
             return "No ranking data available"
 
         explanation = f"Product {result.product_id} (Rank {result.rank + 1})\n"

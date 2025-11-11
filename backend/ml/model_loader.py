@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class ModelNotAvailableError(Exception):
     """Raised when trying to use models without ML dependencies installed."""
+
     pass
 
 
@@ -47,7 +48,7 @@ class ModelRegistry:
         text_emb = registry.encode_text("vintage dress")
     """
 
-    _instance: Optional['ModelRegistry'] = None
+    _instance: Optional["ModelRegistry"] = None
     _models: dict = {}
     _config = None
 
@@ -94,7 +95,7 @@ class ModelRegistry:
         """
         self._check_ml_available()
 
-        if 'clip' not in self._models:
+        if "clip" not in self._models:
             logger.info(
                 f"Loading CLIP model: {self._config.model.clip_model} "
                 f"({self._config.model.clip_pretrained})"
@@ -105,7 +106,7 @@ class ModelRegistry:
             model, _, preprocess = open_clip.create_model_and_transforms(
                 self._config.model.clip_model,
                 pretrained=self._config.model.clip_pretrained,
-                cache_dir=str(self._config.model.clip_cache_path)
+                cache_dir=str(self._config.model.clip_cache_path),
             )
 
             # Move to device
@@ -113,18 +114,18 @@ class ModelRegistry:
             model.eval()  # Set to inference mode
 
             # Enable mixed precision if configured (GPU only)
-            if self._config.model.use_fp16 and self._device != 'cpu':
+            if self._config.model.use_fp16 and self._device != "cpu":
                 model = model.half()
                 logger.info("Enabled FP16 mixed precision")
 
             # Cache the model
-            self._models['clip'] = model
-            self._models['clip_preprocess'] = preprocess
+            self._models["clip"] = model
+            self._models["clip_preprocess"] = preprocess
 
             load_time = time.time() - start_time
             logger.info(f"CLIP model loaded successfully in {load_time:.2f}s")
 
-        return self._models['clip'], self._models['clip_preprocess']
+        return self._models["clip"], self._models["clip_preprocess"]
 
     def encode_image(self, image: Image.Image) -> np.ndarray:
         """
@@ -151,7 +152,7 @@ class ModelRegistry:
         image_tensor = preprocess(image).unsqueeze(0).to(self._device)
 
         # Handle FP16
-        if self._config.model.use_fp16 and self._device != 'cpu':
+        if self._config.model.use_fp16 and self._device != "cpu":
             image_tensor = image_tensor.half()
 
         # Encode
@@ -222,12 +223,10 @@ class ModelRegistry:
         model, preprocess = self.get_clip_model()
 
         # Preprocess all images
-        image_tensors = torch.stack([
-            preprocess(img) for img in images
-        ]).to(self._device)
+        image_tensors = torch.stack([preprocess(img) for img in images]).to(self._device)
 
         # Handle FP16
-        if self._config.model.use_fp16 and self._device != 'cpu':
+        if self._config.model.use_fp16 and self._device != "cpu":
             image_tensors = image_tensors.half()
 
         # Encode in batch
@@ -288,7 +287,7 @@ class ModelRegistry:
 
     def is_loaded(self) -> bool:
         """Check if CLIP model is currently loaded in memory."""
-        return 'clip' in self._models
+        return "clip" in self._models
 
     def unload_models(self):
         """
@@ -300,7 +299,7 @@ class ModelRegistry:
             self._models.clear()
 
             # Clear CUDA cache if using GPU
-            if TORCH_AVAILABLE and self._device != 'cpu':
+            if TORCH_AVAILABLE and self._device != "cpu":
                 torch.cuda.empty_cache()
 
     def get_model_info(self) -> dict:
@@ -311,13 +310,13 @@ class ModelRegistry:
             Dict with model configuration and status
         """
         return {
-            'model_name': self._config.model.clip_model,
-            'pretrained': self._config.model.clip_pretrained,
-            'device': self._device,
-            'fp16': self._config.model.use_fp16,
-            'embedding_dim': self.get_embedding_dim(),
-            'is_loaded': self.is_loaded(),
-            'torch_available': TORCH_AVAILABLE,
+            "model_name": self._config.model.clip_model,
+            "pretrained": self._config.model.clip_pretrained,
+            "device": self._device,
+            "fp16": self._config.model.use_fp16,
+            "embedding_dim": self.get_embedding_dim(),
+            "is_loaded": self.is_loaded(),
+            "torch_available": TORCH_AVAILABLE,
         }
 
 

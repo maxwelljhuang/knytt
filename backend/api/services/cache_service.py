@@ -19,20 +19,20 @@ class CacheConfig:
     """Cache configuration and TTL policies."""
 
     # TTL policies (in seconds)
-    TTL_SEARCH_RESULTS = 300           # 5 minutes
-    TTL_RECOMMEND_RESULTS = 120        # 2 minutes
-    TTL_PRODUCT_METADATA = 3600        # 1 hour
-    TTL_USER_EMBEDDINGS = 1800         # 30 minutes
-    TTL_HOT_EMBEDDINGS = 7200          # 2 hours
-    TTL_POPULAR_QUERIES = 600          # 10 minutes
+    TTL_SEARCH_RESULTS = 300  # 5 minutes
+    TTL_RECOMMEND_RESULTS = 120  # 2 minutes
+    TTL_PRODUCT_METADATA = 3600  # 1 hour
+    TTL_USER_EMBEDDINGS = 1800  # 30 minutes
+    TTL_HOT_EMBEDDINGS = 7200  # 2 hours
+    TTL_POPULAR_QUERIES = 600  # 10 minutes
 
     # Cache warming
-    POPULAR_QUERY_THRESHOLD = 5        # Query must appear 5+ times
-    ACTIVE_USER_THRESHOLD = 10         # User must have 10+ interactions
-    CACHE_WARM_BATCH_SIZE = 100        # Warm 100 items at a time
+    POPULAR_QUERY_THRESHOLD = 5  # Query must appear 5+ times
+    ACTIVE_USER_THRESHOLD = 10  # User must have 10+ interactions
+    CACHE_WARM_BATCH_SIZE = 100  # Warm 100 items at a time
 
     # Statistics
-    STATS_WINDOW_SECONDS = 3600        # 1 hour rolling window
+    STATS_WINDOW_SECONDS = 3600  # 1 hour rolling window
 
 
 class CacheStatistics:
@@ -99,7 +99,8 @@ class CacheStatistics:
             "misses_by_type": dict(self.misses_by_type),
             "avg_get_time_ms": (
                 self.total_get_time_ms / (self.hits + self.misses)
-                if (self.hits + self.misses) > 0 else 0
+                if (self.hits + self.misses) > 0
+                else 0
             ),
         }
 
@@ -159,10 +160,7 @@ class CacheService:
             return None
 
     def set_search_results(
-        self,
-        cache_key: str,
-        results: Dict[str, Any],
-        ttl: Optional[int] = None
+        self, cache_key: str, results: Dict[str, Any], ttl: Optional[int] = None
     ) -> bool:
         """
         Cache search results.
@@ -183,8 +181,7 @@ class CacheService:
             cacheable_data = results.copy()
             if "results" in cacheable_data:
                 cacheable_data["results"] = [
-                    r.dict() if hasattr(r, 'dict') else r
-                    for r in cacheable_data["results"]
+                    r.dict() if hasattr(r, "dict") else r for r in cacheable_data["results"]
                 ]
 
             success = self.cache.redis.set(cache_key, cacheable_data, ttl=ttl)
@@ -226,10 +223,7 @@ class CacheService:
             return None
 
     def set_recommend_results(
-        self,
-        cache_key: str,
-        results: Dict[str, Any],
-        ttl: Optional[int] = None
+        self, cache_key: str, results: Dict[str, Any], ttl: Optional[int] = None
     ) -> bool:
         """Cache recommendation results."""
         ttl = ttl or self.config.TTL_RECOMMEND_RESULTS
@@ -238,8 +232,7 @@ class CacheService:
             cacheable_data = results.copy()
             if "results" in cacheable_data:
                 cacheable_data["results"] = [
-                    r.dict() if hasattr(r, 'dict') else r
-                    for r in cacheable_data["results"]
+                    r.dict() if hasattr(r, "dict") else r for r in cacheable_data["results"]
                 ]
 
             success = self.cache.redis.set(cache_key, cacheable_data, ttl=ttl)
@@ -262,9 +255,7 @@ class CacheService:
             query: Search query
         """
         normalized_query = query.lower().strip()
-        self.popular_queries[normalized_query] = (
-            self.popular_queries.get(normalized_query, 0) + 1
-        )
+        self.popular_queries[normalized_query] = self.popular_queries.get(normalized_query, 0) + 1
 
     def track_user_activity(self, user_id: int):
         """
@@ -285,15 +276,10 @@ class CacheService:
         Returns:
             List of popular queries
         """
-        sorted_queries = sorted(
-            self.popular_queries.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+        sorted_queries = sorted(self.popular_queries.items(), key=lambda x: x[1], reverse=True)
 
         return [
-            query for query, count in sorted_queries
-            if count >= self.config.POPULAR_QUERY_THRESHOLD
+            query for query, count in sorted_queries if count >= self.config.POPULAR_QUERY_THRESHOLD
         ][:limit]
 
     def get_active_users(self) -> List[int]:

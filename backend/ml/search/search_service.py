@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class SearchMode(Enum):
     """Search modes."""
+
     PERSONALIZED_FEED = "personalized_feed"  # User-based recommendations
     TEXT_SEARCH = "text_search"  # Text query search
     SIMILAR_ITEMS = "similar_items"  # Similar product search
@@ -40,6 +41,7 @@ class SearchRequest:
 
     Supports multiple search modes with a single interface.
     """
+
     # User context
     user_id: Optional[int] = None
     user_context: Optional[UserContext] = None
@@ -78,6 +80,7 @@ class SearchResponse:
     """
     Search response with results and metadata.
     """
+
     results: SearchResults
     mode: SearchMode
     total_results: int
@@ -102,19 +105,19 @@ class SearchResponse:
     def to_dict(self) -> dict:
         """Convert to dictionary for API responses."""
         return {
-            'results': self.results.to_dict(),
-            'mode': self.mode.value,
-            'total_results': self.total_results,
-            'offset': self.offset,
-            'limit': self.limit,
-            'search_time_ms': self.search_time_ms,
-            'total_time_ms': self.total_time_ms,
-            'user_id': self.user_id,
-            'query': self.query,
-            'filters_applied': self.filters_applied,
-            'ranking_applied': self.ranking_applied,
-            'diversity_applied': self.diversity_applied,
-            'cache_hit_rate': self.cache_hit_rate,
+            "results": self.results.to_dict(),
+            "mode": self.mode.value,
+            "total_results": self.total_results,
+            "offset": self.offset,
+            "limit": self.limit,
+            "search_time_ms": self.search_time_ms,
+            "total_time_ms": self.total_time_ms,
+            "user_id": self.user_id,
+            "query": self.query,
+            "filters_applied": self.filters_applied,
+            "ranking_applied": self.ranking_applied,
+            "diversity_applied": self.diversity_applied,
+            "cache_hit_rate": self.cache_hit_rate,
         }
 
 
@@ -132,11 +135,7 @@ class SearchService:
     - Feedback
     """
 
-    def __init__(
-        self,
-        config: Optional[MLConfig] = None,
-        db_session_factory=None
-    ):
+    def __init__(self, config: Optional[MLConfig] = None, db_session_factory=None):
         """
         Initialize search service.
 
@@ -149,22 +148,16 @@ class SearchService:
 
         # Initialize components
         self.personalized_search = PersonalizedSearch(
-            config=self.config,
-            db_session_factory=db_session_factory
+            config=self.config, db_session_factory=db_session_factory
         )
         self.cache = EmbeddingCache(self.config)
         self.feedback_handler = FeedbackHandler(
-            config=self.config,
-            db_session_factory=db_session_factory
+            config=self.config, db_session_factory=db_session_factory
         )
 
         logger.info("Search service initialized")
 
-    def search(
-        self,
-        request: SearchRequest,
-        session=None
-    ) -> SearchResponse:
+    def search(self, request: SearchRequest, session=None) -> SearchResponse:
         """
         Execute search request.
 
@@ -205,9 +198,7 @@ class SearchService:
 
         # Apply pagination
         paginated_results = self._paginate_results(
-            results,
-            offset=request.offset,
-            limit=request.limit
+            results, offset=request.offset, limit=request.limit
         )
 
         # Build response
@@ -228,17 +219,11 @@ class SearchService:
             diversity_applied=diversity_applied,
         )
 
-        logger.info(
-            f"Search completed: {response.total_results} results in {total_time_ms:.2f}ms"
-        )
+        logger.info(f"Search completed: {response.total_results} results in {total_time_ms:.2f}ms")
 
         return response
 
-    def _search_personalized_feed(
-        self,
-        request: SearchRequest,
-        session
-    ) -> SearchResults:
+    def _search_personalized_feed(self, request: SearchRequest, session) -> SearchResults:
         """
         Get personalized feed recommendations.
 
@@ -260,7 +245,7 @@ class SearchService:
             return self.personalized_search.recommend_for_anonymous(
                 k=request.limit * 2,  # Get more for pagination
                 filters=request.filters,
-                session=session
+                session=session,
             )
 
         # Personalized recommendations
@@ -271,14 +256,10 @@ class SearchService:
             context=request.context,
             use_ranking=request.use_ranking,
             ranking_config=request.ranking_config,
-            session=session
+            session=session,
         )
 
-    def _search_text(
-        self,
-        request: SearchRequest,
-        session
-    ) -> SearchResults:
+    def _search_text(self, request: SearchRequest, session) -> SearchResults:
         """
         Text search with personalization.
 
@@ -300,6 +281,7 @@ class SearchService:
         if user_context is None:
             # Create anonymous context
             from ..retrieval import create_user_context
+
             user_context = create_user_context()
 
         # Execute search
@@ -309,14 +291,10 @@ class SearchService:
             k=request.limit * 2,
             filters=request.filters,
             use_ranking=request.use_ranking,
-            session=session
+            session=session,
         )
 
-    def _search_similar_items(
-        self,
-        request: SearchRequest,
-        session
-    ) -> SearchResults:
+    def _search_similar_items(self, request: SearchRequest, session) -> SearchResults:
         """
         Find similar items with personalization.
 
@@ -338,6 +316,7 @@ class SearchService:
         if user_context is None:
             # Create anonymous context
             from ..retrieval import create_user_context
+
             user_context = create_user_context()
 
         # Find similar items
@@ -348,14 +327,10 @@ class SearchService:
             filters=request.filters,
             blend_ratio=0.9,  # 90% product similarity, 10% user preference
             use_ranking=request.use_ranking,
-            session=session
+            session=session,
         )
 
-    def _search_category(
-        self,
-        request: SearchRequest,
-        session
-    ) -> SearchResults:
+    def _search_category(self, request: SearchRequest, session) -> SearchResults:
         """
         Browse category with personalization.
 
@@ -369,11 +344,7 @@ class SearchService:
         # Category browse is like personalized feed but with category filter
         return self._search_personalized_feed(request, session)
 
-    def _search_trending(
-        self,
-        request: SearchRequest,
-        session
-    ) -> SearchResults:
+    def _search_trending(self, request: SearchRequest, session) -> SearchResults:
         """
         Get trending/popular items.
 
@@ -394,7 +365,7 @@ class SearchService:
                 query_vector_shape=(0,),
                 k=request.limit,
                 total_found=0,
-                search_time_ms=0.0
+                search_time_ms=0.0,
             )
 
         # TODO: Convert hot products to SearchResults with proper ranking
@@ -402,11 +373,7 @@ class SearchService:
         logger.info(f"Found {len(hot_products)} hot products")
 
         return SearchResults(
-            results=[],
-            query_vector_shape=(0,),
-            k=request.limit,
-            total_found=0,
-            search_time_ms=0.0
+            results=[], query_vector_shape=(0,), k=request.limit, total_found=0, search_time_ms=0.0
         )
 
     def _build_user_context(self, user_id: int) -> Optional[UserContext]:
@@ -422,8 +389,8 @@ class SearchService:
         # Get embeddings from cache
         embeddings = self.cache.get_user_embeddings(user_id)
 
-        long_term = embeddings.get('long_term')
-        session = embeddings.get('session')
+        long_term = embeddings.get("long_term")
+        session = embeddings.get("session")
 
         if long_term is None and session is None:
             # No embeddings available
@@ -434,16 +401,10 @@ class SearchService:
         from ..retrieval import create_user_context
 
         return create_user_context(
-            user_id=user_id,
-            long_term_embedding=long_term,
-            session_embedding=session
+            user_id=user_id, long_term_embedding=long_term, session_embedding=session
         )
 
-    def _apply_diversity(
-        self,
-        results: SearchResults,
-        diversity_weight: float
-    ) -> SearchResults:
+    def _apply_diversity(self, results: SearchResults, diversity_weight: float) -> SearchResults:
         """
         Apply diversity to search results (MMR-style).
 
@@ -480,12 +441,7 @@ class SearchService:
 
         return results
 
-    def _paginate_results(
-        self,
-        results: SearchResults,
-        offset: int,
-        limit: int
-    ) -> SearchResults:
+    def _paginate_results(self, results: SearchResults, offset: int, limit: int) -> SearchResults:
         """
         Apply pagination to results.
 
@@ -504,7 +460,7 @@ class SearchService:
             return results
 
         # Slice results
-        paginated = results.results[offset:offset + limit]
+        paginated = results.results[offset : offset + limit]
 
         # Update ranks
         for i, result in enumerate(paginated):
@@ -516,7 +472,7 @@ class SearchService:
             query_vector_shape=results.query_vector_shape,
             k=limit,
             total_found=len(paginated),
-            search_time_ms=results.search_time_ms
+            search_time_ms=results.search_time_ms,
         )
 
     def record_interaction(
@@ -524,7 +480,7 @@ class SearchService:
         user_id: int,
         product_id: int,
         interaction_type: InteractionType,
-        context: Optional[str] = None
+        context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Record user interaction (for feedback loop).
@@ -544,7 +500,7 @@ class SearchService:
             user_id=user_id,
             product_id=product_id,
             interaction_type=interaction_type,
-            context=context
+            context=context,
         )
 
         return self.feedback_handler.process_event(event)
@@ -563,8 +519,8 @@ class SearchService:
         index_stats = index_manager.get_stats()
 
         return {
-            'service': 'SearchService',
-            'version': self.config.model_version,
-            'index': index_stats,
-            'cache': cache_stats,
+            "service": "SearchService",
+            "version": self.config.model_version,
+            "index": index_stats,
+            "cache": cache_stats,
         }

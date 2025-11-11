@@ -11,13 +11,15 @@ from .celery_app import app
 logger = logging.getLogger(__name__)
 
 
-@app.task(bind=True, name='tasks.generate_product_embeddings', max_retries=2, default_retry_delay=180)
+@app.task(
+    bind=True, name="tasks.generate_product_embeddings", max_retries=2, default_retry_delay=180
+)
 def generate_product_embeddings(
     self,
     product_ids: Optional[List[str]] = None,
     batch_size: int = 16,
     force_regenerate: bool = False,
-    embedding_type: str = 'text'
+    embedding_type: str = "text",
 ) -> Dict[str, Any]:
     """
     Generate embeddings for products using CLIP.
@@ -56,9 +58,9 @@ def generate_product_embeddings(
         if not TORCH_AVAILABLE:
             logger.error("PyTorch not available - cannot generate embeddings")
             return {
-                'status': 'error',
-                'error': 'PyTorch not available',
-                'processed': 0,
+                "status": "error",
+                "error": "PyTorch not available",
+                "processed": 0,
             }
 
         # Create database session
@@ -70,10 +72,7 @@ def generate_product_embeddings(
                 # Process specific products
                 uuid_list = [UUID(pid) if isinstance(pid, str) else pid for pid in product_ids]
                 query = select(Product).where(
-                    and_(
-                        Product.id.in_(uuid_list),
-                        Product.is_duplicate == False
-                    )
+                    and_(Product.id.in_(uuid_list), Product.is_duplicate == False)
                 )
             else:
                 # Process all non-duplicate products
@@ -82,10 +81,7 @@ def generate_product_embeddings(
                 else:
                     # Only process products without embeddings
                     query = select(Product).where(
-                        and_(
-                            Product.is_duplicate == False,
-                            Product.text_embedding.is_(None)
-                        )
+                        and_(Product.is_duplicate == False, Product.text_embedding.is_(None))
                     )
 
             query = query.order_by(Product.id)
@@ -96,11 +92,11 @@ def generate_product_embeddings(
 
             if total == 0:
                 return {
-                    'status': 'success',
-                    'processed': 0,
-                    'skipped': 0,
-                    'failed': 0,
-                    'message': 'No products to process'
+                    "status": "success",
+                    "processed": 0,
+                    "skipped": 0,
+                    "failed": 0,
+                    "message": "No products to process",
                 }
 
             # Load CLIP model
@@ -115,7 +111,7 @@ def generate_product_embeddings(
             error_details = []
 
             for i in range(0, total, batch_size):
-                batch = products[i:i+batch_size]
+                batch = products[i : i + batch_size]
                 batch_num = i // batch_size + 1
                 total_batches = (total + batch_size - 1) // batch_size
 
@@ -138,17 +134,21 @@ def generate_product_embeddings(
                     for product, embedding in zip(batch, embeddings):
                         try:
                             # Store in ProductEmbedding table
-                            stmt = insert(ProductEmbedding).values(
-                                product_id=product.id,
-                                embedding_type=embedding_type,
-                                embedding=embedding.tolist(),
-                                model_version='ViT-B-32'
-                            ).on_conflict_do_update(
-                                index_elements=['product_id', 'embedding_type'],
-                                set_={
-                                    'embedding': embedding.tolist(),
-                                    'model_version': 'ViT-B-32'
-                                }
+                            stmt = (
+                                insert(ProductEmbedding)
+                                .values(
+                                    product_id=product.id,
+                                    embedding_type=embedding_type,
+                                    embedding=embedding.tolist(),
+                                    model_version="ViT-B-32",
+                                )
+                                .on_conflict_do_update(
+                                    index_elements=["product_id", "embedding_type"],
+                                    set_={
+                                        "embedding": embedding.tolist(),
+                                        "model_version": "ViT-B-32",
+                                    },
+                                )
                             )
                             db.execute(stmt)
 
@@ -180,14 +180,14 @@ def generate_product_embeddings(
             logger.info("=" * 60)
 
             return {
-                'status': 'success' if failed == 0 else 'partial',
-                'processed': successful,
-                'skipped': skipped,
-                'failed': failed,
-                'total': total,
-                'embedding_type': embedding_type,
-                'success_rate': (successful / total * 100) if total > 0 else 0,
-                'errors': error_details[:10],  # Limit error details
+                "status": "success" if failed == 0 else "partial",
+                "processed": successful,
+                "skipped": skipped,
+                "failed": failed,
+                "total": total,
+                "embedding_type": embedding_type,
+                "success_rate": (successful / total * 100) if total > 0 else 0,
+                "errors": error_details[:10],  # Limit error details
             }
 
         finally:
@@ -202,10 +202,10 @@ def generate_product_embeddings(
         except self.MaxRetriesExceededError:
             logger.error("Max retries exceeded for embedding generation")
             return {
-                'status': 'error',
-                'error': str(e),
-                'processed': 0,
-                'retries_exceeded': True,
+                "status": "error",
+                "error": str(e),
+                "processed": 0,
+                "retries_exceeded": True,
             }
 
 
@@ -242,8 +242,8 @@ def _create_text_representation(product) -> str:
     return " ".join(parts)
 
 
-@app.task(bind=True, name='tasks.rebuild_faiss_index', max_retries=1, default_retry_delay=300)
-def rebuild_faiss_index(self, embedding_type: str = 'text') -> Dict[str, Any]:
+@app.task(bind=True, name="tasks.rebuild_faiss_index", max_retries=1, default_retry_delay=300)
+def rebuild_faiss_index(self, embedding_type: str = "text") -> Dict[str, Any]:
     """
     Rebuild the FAISS index from all product embeddings in database.
 
@@ -278,7 +278,7 @@ def rebuild_faiss_index(self, embedding_type: str = 'text') -> Dict[str, Any]:
             logger.info("Fetching product embeddings from database...")
 
             # Query products with embeddings
-            if embedding_type == 'text':
+            if embedding_type == "text":
                 # Use denormalized column on Product table for performance
                 query = select(Product).where(Product.text_embedding.isnot(None))
                 results = db.execute(query).scalars().all()
@@ -309,7 +309,12 @@ def rebuild_faiss_index(self, embedding_type: str = 'text') -> Dict[str, Any]:
 
                 for prod_emb in results:
                     # Try embedding_vector first (pgvector), then embedding (legacy)
-                    emb_data = prod_emb.embedding_vector if hasattr(prod_emb, 'embedding_vector') and prod_emb.embedding_vector is not None else prod_emb.embedding
+                    emb_data = (
+                        prod_emb.embedding_vector
+                        if hasattr(prod_emb, "embedding_vector")
+                        and prod_emb.embedding_vector is not None
+                        else prod_emb.embedding
+                    )
 
                     if emb_data is not None:
                         if isinstance(emb_data, (list, tuple)):
@@ -323,9 +328,9 @@ def rebuild_faiss_index(self, embedding_type: str = 'text') -> Dict[str, Any]:
             if len(embeddings_list) == 0:
                 logger.error(f"No {embedding_type} embeddings found in database")
                 return {
-                    'status': 'error',
-                    'error': f'No {embedding_type} embeddings found',
-                    'embedding_type': embedding_type,
+                    "status": "error",
+                    "error": f"No {embedding_type} embeddings found",
+                    "embedding_type": embedding_type,
                 }
 
             # Convert to numpy array
@@ -335,10 +340,7 @@ def rebuild_faiss_index(self, embedding_type: str = 'text') -> Dict[str, Any]:
             # Build FAISS index
             logger.info("Building FAISS index...")
             builder = FAISSIndexBuilder()
-            index, id_mapping = builder.build_index(
-                embeddings=embeddings,
-                product_ids=product_ids
-            )
+            index, id_mapping = builder.build_index(embeddings=embeddings, product_ids=product_ids)
 
             # Save index to disk
             logger.info("Saving FAISS index to disk...")
@@ -355,12 +357,12 @@ def rebuild_faiss_index(self, embedding_type: str = 'text') -> Dict[str, Any]:
             )
 
             return {
-                'status': 'success',
-                'embedding_type': embedding_type,
-                'num_vectors': stats['num_vectors'],
-                'index_type': stats['index_type'],
-                'save_path': str(save_path),
-                'stats': stats,
+                "status": "success",
+                "embedding_type": embedding_type,
+                "num_vectors": stats["num_vectors"],
+                "index_type": stats["index_type"],
+                "save_path": str(save_path),
+                "stats": stats,
             }
 
         finally:
@@ -375,18 +377,16 @@ def rebuild_faiss_index(self, embedding_type: str = 'text') -> Dict[str, Any]:
         except self.MaxRetriesExceededError:
             logger.error("Max retries exceeded for FAISS index rebuild")
             return {
-                'status': 'error',
-                'embedding_type': embedding_type,
-                'error': str(e),
-                'retries_exceeded': True,
+                "status": "error",
+                "embedding_type": embedding_type,
+                "error": str(e),
+                "retries_exceeded": True,
             }
 
 
-@app.task(bind=True, name='tasks.update_user_embedding', max_retries=3, default_retry_delay=60)
+@app.task(bind=True, name="tasks.update_user_embedding", max_retries=3, default_retry_delay=60)
 def update_user_embedding(
-    self,
-    user_external_id: str,
-    max_interactions: int = 50
+    self, user_external_id: str, max_interactions: int = 50
 ) -> Dict[str, Any]:
     """
     Update user's long-term embedding based on interaction history.
@@ -434,19 +434,14 @@ def update_user_embedding(
 
             if user is None:
                 logger.error(f"User not found: {user_external_id}")
-                return {
-                    'status': 'error',
-                    'user_id': user_external_id,
-                    'error': 'User not found'
-                }
+                return {"status": "error", "user_id": user_external_id, "error": "User not found"}
 
             # Create embedding builder
             builder = get_embedding_builder(db=db, cache=cache)
 
             # Update user embedding from interaction history
             success, metadata = builder.update_user_embedding(
-                user_id=user.id,
-                max_interactions=max_interactions
+                user_id=user.id, max_interactions=max_interactions
             )
 
             if success:
@@ -457,17 +452,17 @@ def update_user_embedding(
                     f"processed={metadata.get('processed_count', 0)}/{metadata.get('interaction_count', 0)}"
                 )
                 return {
-                    'status': 'success',
-                    'user_id': user_external_id,
-                    'metadata': metadata,
+                    "status": "success",
+                    "user_id": user_external_id,
+                    "metadata": metadata,
                 }
             else:
-                error_msg = metadata.get('error', 'Unknown error')
+                error_msg = metadata.get("error", "Unknown error")
                 logger.error(f"Failed to update user embedding: {error_msg}")
                 return {
-                    'status': 'error',
-                    'user_id': user_external_id,
-                    'error': error_msg,
+                    "status": "error",
+                    "user_id": user_external_id,
+                    "error": error_msg,
                 }
 
         finally:
@@ -482,15 +477,17 @@ def update_user_embedding(
         except self.MaxRetriesExceededError:
             logger.error(f"Max retries exceeded for user {user_external_id}")
             return {
-                'status': 'error',
-                'user_id': user_external_id,
-                'error': str(e),
-                'retries_exceeded': True,
+                "status": "error",
+                "user_id": user_external_id,
+                "error": str(e),
+                "retries_exceeded": True,
             }
 
 
-@app.task(bind=True, name='tasks.batch_refresh_user_embeddings')
-def batch_refresh_user_embeddings(self, hours_active: int = 24, batch_size: int = 50) -> Dict[str, Any]:
+@app.task(bind=True, name="tasks.batch_refresh_user_embeddings")
+def batch_refresh_user_embeddings(
+    self, hours_active: int = 24, batch_size: int = 50
+) -> Dict[str, Any]:
     """
     Refresh embeddings for users who were active in the last N hours.
 
@@ -525,7 +522,7 @@ def batch_refresh_user_embeddings(self, hours_active: int = 24, batch_size: int 
 
             # Query for active users
             query = (
-                select(User.external_id, func.count(UserInteraction.id).label('interaction_count'))
+                select(User.external_id, func.count(UserInteraction.id).label("interaction_count"))
                 .join(UserInteraction, User.id == UserInteraction.user_id)
                 .where(UserInteraction.created_at >= cutoff_time)
                 .group_by(User.external_id)
@@ -540,9 +537,9 @@ def batch_refresh_user_embeddings(self, hours_active: int = 24, batch_size: int 
 
             if len(active_users) == 0:
                 return {
-                    'status': 'success',
-                    'refreshed': 0,
-                    'message': 'No active users to refresh'
+                    "status": "success",
+                    "refreshed": 0,
+                    "message": "No active users to refresh",
                 }
 
             # Trigger embedding update for each user
@@ -555,7 +552,7 @@ def batch_refresh_user_embeddings(self, hours_active: int = 24, batch_size: int 
                     # Dispatch update task
                     result = update_user_embedding.delay(
                         user_external_id=user_external_id,
-                        max_interactions=100  # Use more interactions for periodic refresh
+                        max_interactions=100,  # Use more interactions for periodic refresh
                     )
                     task_ids.append(result.id)
                     successful += 1
@@ -574,11 +571,11 @@ def batch_refresh_user_embeddings(self, hours_active: int = 24, batch_size: int 
             )
 
             return {
-                'status': 'success',
-                'active_users': len(active_users),
-                'refreshed': successful,
-                'failed': failed,
-                'task_ids': task_ids[:10],  # Limit task IDs in response
+                "status": "success",
+                "active_users": len(active_users),
+                "refreshed": successful,
+                "failed": failed,
+                "task_ids": task_ids[:10],  # Limit task IDs in response
             }
 
         finally:
@@ -587,12 +584,12 @@ def batch_refresh_user_embeddings(self, hours_active: int = 24, batch_size: int 
     except Exception as e:
         logger.error(f"Error in batch user embedding refresh: {e}", exc_info=True)
         return {
-            'status': 'error',
-            'error': str(e),
+            "status": "error",
+            "error": str(e),
         }
 
 
-@app.task(bind=True, name='tasks.cleanup_old_sessions')
+@app.task(bind=True, name="tasks.cleanup_old_sessions")
 def cleanup_old_sessions(self, days_old: int = 7) -> Dict[str, Any]:
     """
     Clean up old session data and expired caches.
@@ -635,8 +632,7 @@ def cleanup_old_sessions(self, days_old: int = 7) -> Dict[str, Any]:
             # Clean up old session embeddings from database
             # Only delete session-type embeddings, keep long-term
             delete_stmt = delete(UserEmbedding).where(
-                UserEmbedding.embedding_type == 'session',
-                UserEmbedding.updated_at < cutoff_date
+                UserEmbedding.embedding_type == "session", UserEmbedding.updated_at < cutoff_date
             )
 
             result = db.execute(delete_stmt)
@@ -658,10 +654,10 @@ def cleanup_old_sessions(self, days_old: int = 7) -> Dict[str, Any]:
             logger.info(f"Session cleanup complete: {deleted_count} sessions removed")
 
             return {
-                'status': 'success',
-                'deleted_sessions': deleted_count,
-                'cache_cleaned': cache_cleaned,
-                'cutoff_date': cutoff_date.isoformat(),
+                "status": "success",
+                "deleted_sessions": deleted_count,
+                "cache_cleaned": cache_cleaned,
+                "cutoff_date": cutoff_date.isoformat(),
             }
 
         finally:
@@ -670,6 +666,6 @@ def cleanup_old_sessions(self, days_old: int = 7) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error in session cleanup: {e}", exc_info=True)
         return {
-            'status': 'error',
-            'error': str(e),
+            "status": "error",
+            "error": str(e),
         }

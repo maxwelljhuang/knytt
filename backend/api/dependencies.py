@@ -67,9 +67,7 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def get_search_service(
-    db: Session = Depends(get_db)
-) -> SearchService:
+def get_search_service(db: Session = Depends(get_db)) -> SearchService:
     """
     Get search service instance.
 
@@ -83,9 +81,7 @@ def get_search_service(
     # Create session factory for the service
     SessionLocal = get_session_factory()
 
-    service = SearchService(
-        db_session_factory=SessionLocal
-    )
+    service = SearchService(db_session_factory=SessionLocal)
 
     # Ensure FAISS index is loaded
     try:
@@ -111,8 +107,7 @@ def get_embedding_cache() -> EmbeddingCache:
 
 
 def verify_api_key(
-    settings: APISettings = Depends(get_settings),
-    x_api_key: Optional[str] = Header(None)
+    settings: APISettings = Depends(get_settings), x_api_key: Optional[str] = Header(None)
 ) -> bool:
     """
     Verify API key if required.
@@ -141,9 +136,7 @@ def verify_api_key(
     return True
 
 
-def get_current_user_id(
-    x_user_id: Optional[str] = Header(None)
-) -> Optional[int]:
+def get_current_user_id(x_user_id: Optional[str] = Header(None)) -> Optional[int]:
     """
     Get current user ID from header.
 
@@ -164,9 +157,7 @@ def get_current_user_id(
         )
 
 
-def get_request_id(
-    x_request_id: Optional[str] = Header(None)
-) -> str:
+def get_request_id(x_request_id: Optional[str] = Header(None)) -> str:
     """
     Get or generate request ID for tracing.
 
@@ -180,12 +171,12 @@ def get_request_id(
 
     # Generate UUID if not provided
     import uuid
+
     return str(uuid.uuid4())
 
 
 def get_current_user(
-    access_token: Optional[str] = Cookie(None),
-    db: Session = Depends(get_db)
+    access_token: Optional[str] = Cookie(None), db: Session = Depends(get_db)
 ) -> User:
     """
     Get current authenticated user from JWT token in cookie.
@@ -248,8 +239,7 @@ def get_current_user(
 
 
 def get_current_user_optional(
-    access_token: Optional[str] = Cookie(None),
-    db: Session = Depends(get_db)
+    access_token: Optional[str] = Cookie(None), db: Session = Depends(get_db)
 ) -> Optional[User]:
     """
     Get current authenticated user, but don't raise error if not authenticated.

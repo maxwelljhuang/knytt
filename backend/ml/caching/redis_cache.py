@@ -11,6 +11,7 @@ import threading
 try:
     import redis
     from redis.connection import ConnectionPool
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class RedisCacheError(Exception):
     """Exception raised for Redis cache errors."""
+
     pass
 
 
@@ -32,7 +34,7 @@ class RedisCache:
     Provides thread-safe access to Redis for caching embeddings and other data.
     """
 
-    _instance: Optional['RedisCache'] = None
+    _instance: Optional["RedisCache"] = None
     _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
@@ -54,13 +56,11 @@ class RedisCache:
             RedisCacheError: If Redis is not available
         """
         # Only initialize once
-        if hasattr(self, '_initialized') and self._initialized:
+        if hasattr(self, "_initialized") and self._initialized:
             return
 
         if not REDIS_AVAILABLE:
-            raise RedisCacheError(
-                "Redis is not installed. Install with: pip install redis"
-            )
+            raise RedisCacheError("Redis is not installed. Install with: pip install redis")
 
         self.config = config or get_ml_config()
 
@@ -131,12 +131,7 @@ class RedisCache:
             logger.error(f"Error deserializing cached data for key '{key}': {e}")
             return None
 
-    def set(
-        self,
-        key: str,
-        value: Any,
-        ttl: Optional[int] = None
-    ) -> bool:
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         """
         Set value in cache.
 
@@ -259,11 +254,7 @@ class RedisCache:
             logger.error(f"Redis MGET error: {e}")
             return {}
 
-    def set_many(
-        self,
-        mapping: Dict[str, Any],
-        ttl: Optional[int] = None
-    ) -> bool:
+    def set_many(self, mapping: Dict[str, Any], ttl: Optional[int] = None) -> bool:
         """
         Set multiple values in cache.
 

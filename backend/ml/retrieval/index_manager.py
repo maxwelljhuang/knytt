@@ -15,6 +15,7 @@ from sqlalchemy import text
 
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class FAISSIndexManagerError(Exception):
     """Exception raised for index manager errors."""
+
     pass
 
 
@@ -41,7 +43,7 @@ class FAISSIndexManager:
     - Provides thread-safe access to the index
     """
 
-    _instance: Optional['FAISSIndexManager'] = None
+    _instance: Optional["FAISSIndexManager"] = None
     _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
@@ -61,7 +63,7 @@ class FAISSIndexManager:
             db_session_factory: Factory function to create database sessions
         """
         # Only initialize once
-        if hasattr(self, '_initialized') and self._initialized:
+        if hasattr(self, "_initialized") and self._initialized:
             return
 
         self.config = config or get_ml_config()
@@ -76,9 +78,7 @@ class FAISSIndexManager:
 
         # Rebuild scheduling
         self.last_rebuild: Optional[datetime] = None
-        self.rebuild_interval = timedelta(
-            hours=self.config.storage.rebuild_index_interval_hours
-        )
+        self.rebuild_interval = timedelta(hours=self.config.storage.rebuild_index_interval_hours)
 
         # Thread safety
         self.index_lock = threading.RLock()
@@ -108,13 +108,15 @@ class FAISSIndexManager:
         """
         try:
             # Query product embeddings
-            query = text("""
+            query = text(
+                """
                 SELECT product_id, embedding
                 FROM product_embeddings
                 WHERE embedding_type = 'text'
                   AND embedding IS NOT NULL
                 ORDER BY product_id
-            """)
+            """
+            )
 
             result = session.execute(query)
             rows = result.fetchall()
@@ -136,7 +138,7 @@ class FAISSIndexManager:
                 # Convert pgvector to numpy array
                 if isinstance(embedding, str):
                     # If stored as string, parse it
-                    embedding = np.fromstring(embedding.strip('[]'), sep=',')
+                    embedding = np.fromstring(embedding.strip("[]"), sep=",")
                 elif isinstance(embedding, (list, tuple)):
                     embedding = np.array(embedding)
 
@@ -205,8 +207,8 @@ class FAISSIndexManager:
             self.metadata = metadata
 
             # Check if metadata has created_at timestamp
-            if 'created_at' in metadata:
-                self.last_rebuild = datetime.fromisoformat(metadata['created_at'])
+            if "created_at" in metadata:
+                self.last_rebuild = datetime.fromisoformat(metadata["created_at"])
             else:
                 self.last_rebuild = datetime.utcnow()
 
@@ -287,9 +289,7 @@ class FAISSIndexManager:
             FAISSIndexManagerError: If index is not loaded
         """
         if self.index is None:
-            raise FAISSIndexManagerError(
-                "Index not loaded. Call ensure_index_loaded() first."
-            )
+            raise FAISSIndexManagerError("Index not loaded. Call ensure_index_loaded() first.")
 
         with self.index_lock:
             return self.index
@@ -334,19 +334,22 @@ class FAISSIndexManager:
         """
         with self.index_lock:
             if self.index is None:
-                return {'status': 'not_loaded'}
+                return {"status": "not_loaded"}
 
             stats = self.builder.get_index_stats(self.index)
-            stats.update({
-                'status': 'loaded',
-                'num_products': len(self.id_mapping),
-                'last_rebuild': self.last_rebuild.isoformat() if self.last_rebuild else None,
-                'rebuild_interval_hours': self.rebuild_interval.total_seconds() / 3600,
-                'next_rebuild': (
-                    (self.last_rebuild + self.rebuild_interval).isoformat()
-                    if self.last_rebuild else None
-                ),
-            })
+            stats.update(
+                {
+                    "status": "loaded",
+                    "num_products": len(self.id_mapping),
+                    "last_rebuild": self.last_rebuild.isoformat() if self.last_rebuild else None,
+                    "rebuild_interval_hours": self.rebuild_interval.total_seconds() / 3600,
+                    "next_rebuild": (
+                        (self.last_rebuild + self.rebuild_interval).isoformat()
+                        if self.last_rebuild
+                        else None
+                    ),
+                }
+            )
 
             return stats
 
@@ -366,12 +369,13 @@ class FAISSIndexManager:
 _manager_instance: Optional[FAISSIndexManager] = None
 
 
-def get_index_manager(config: Optional[MLConfig] = None, db_session_factory=None) -> FAISSIndexManager:
+def get_index_manager(
+    config: Optional[MLConfig] = None, db_session_factory=None
+) -> FAISSIndexManager:
     """Get global FAISS index manager instance."""
     global _manager_instance
     if _manager_instance is None:
         _manager_instance = FAISSIndexManager.get_instance(
-            config=config,
-            db_session_factory=db_session_factory
+            config=config, db_session_factory=db_session_factory
         )
     return _manager_instance

@@ -23,11 +23,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     - Request ID (if present)
     """
 
-    async def dispatch(
-        self,
-        request: Request,
-        call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Process request and log details."""
         # Get request ID
         request_id = request.headers.get("X-Request-ID", "-")
@@ -44,7 +40,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 "path": request.url.path,
                 "query": str(request.url.query) if request.url.query else None,
                 "client": request.client.host if request.client else None,
-            }
+            },
         )
 
         # Process request
@@ -63,7 +59,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     "path": request.url.path,
                     "duration_ms": duration_ms,
                     "error": str(e),
-                }
+                },
             )
             raise
 
@@ -79,7 +75,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 "path": request.url.path,
                 "status_code": response.status_code,
                 "duration_ms": duration_ms,
-            }
+            },
         )
 
         # Add duration header

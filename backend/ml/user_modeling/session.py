@@ -42,8 +42,8 @@ class SessionEmbedding:
     def add_interaction(
         self,
         product_embedding: np.ndarray,
-        interaction_type: str = 'view',
-        timestamp: Optional[datetime] = None
+        interaction_type: str = "view",
+        timestamp: Optional[datetime] = None,
     ):
         """
         Add an interaction to the session.
@@ -56,11 +56,13 @@ class SessionEmbedding:
         if timestamp is None:
             timestamp = datetime.now()
 
-        self.interactions.append({
-            'embedding': product_embedding,
-            'type': interaction_type,
-            'timestamp': timestamp,
-        })
+        self.interactions.append(
+            {
+                "embedding": product_embedding,
+                "type": interaction_type,
+                "timestamp": timestamp,
+            }
+        )
 
         self.last_activity = timestamp
 
@@ -75,7 +77,7 @@ class SessionEmbedding:
             return None
 
         # Get all embeddings
-        embeddings = [interaction['embedding'] for interaction in self.interactions]
+        embeddings = [interaction["embedding"] for interaction in self.interactions]
 
         # Compute rolling average
         session_emb = np.mean(embeddings, axis=0)
@@ -120,24 +122,24 @@ class SessionEmbedding:
         """Get session statistics."""
         if not self.interactions:
             return {
-                'interaction_count': 0,
-                'is_active': False,
-                'has_embedding': False,
+                "interaction_count": 0,
+                "is_active": False,
+                "has_embedding": False,
             }
 
         # Count interaction types
         type_counts = {}
         for interaction in self.interactions:
-            itype = interaction['type']
+            itype = interaction["type"]
             type_counts[itype] = type_counts.get(itype, 0) + 1
 
         return {
-            'interaction_count': len(self.interactions),
-            'is_active': self.is_active(),
-            'has_embedding': True,
-            'last_activity': self.last_activity,
-            'interaction_types': type_counts,
-            'window_size': self.window_size,
+            "interaction_count": len(self.interactions),
+            "is_active": self.is_active(),
+            "has_embedding": True,
+            "last_activity": self.last_activity,
+            "interaction_types": type_counts,
+            "window_size": self.window_size,
         }
 
 
@@ -173,10 +175,7 @@ class SessionManager:
         return self.sessions[user_id]
 
     def add_interaction(
-        self,
-        user_id: str,
-        product_embedding: np.ndarray,
-        interaction_type: str = 'view'
+        self, user_id: str, product_embedding: np.ndarray, interaction_type: str = "view"
     ):
         """
         Add interaction to user's session.
@@ -210,9 +209,7 @@ class SessionManager:
     def cleanup_inactive_sessions(self):
         """Remove inactive sessions to free memory."""
         inactive_users = [
-            user_id
-            for user_id, session in self.sessions.items()
-            if not session.is_active()
+            user_id for user_id, session in self.sessions.items() if not session.is_active()
         ]
 
         for user_id in inactive_users:

@@ -36,7 +36,7 @@ async def search(
     cache: EmbeddingCache = Depends(get_embedding_cache),
     cache_service: CacheService = Depends(get_cache_service),
     settings: APISettings = Depends(get_settings),
-    request_id: str = Depends(get_request_id)
+    request_id: str = Depends(get_request_id),
 ) -> SearchResponse:
     """
     Search for products using text query.
@@ -67,7 +67,7 @@ async def search(
 
     logger.info(
         f"Search request: query='{request.query}', user_id={request.user_id}",
-        extra={"request_id": request_id}
+        extra={"request_id": request_id},
     )
 
     # Track query for cache warming
@@ -84,10 +84,7 @@ async def search(
         cached_response = cache_service.get_search_results(cache_key)
 
         if cached_response:
-            logger.info(
-                f"Cache HIT for query: '{request.query}'",
-                extra={"request_id": request_id}
-            )
+            logger.info(f"Cache HIT for query: '{request.query}'", extra={"request_id": request_id})
             cached_response["cached"] = True
             cached_response["total_time_ms"] = (time.time() - start_time) * 1000
             return SearchResponse(**cached_response)
@@ -101,7 +98,7 @@ async def search(
         logger.error(f"Failed to encode query: {e}")
         raise SearchError(
             message="Failed to encode search query",
-            details={"query": request.query, "error": str(e)}
+            details={"query": request.query, "error": str(e)},
         )
 
     # Step 2: Build filters
@@ -128,7 +125,7 @@ async def search(
             user_context = create_user_context(
                 user_id=request.user_id,
                 long_term_embedding=long_term,
-                session_embedding=session_emb
+                session_embedding=session_emb,
             )
 
     # Step 4: Perform search
@@ -141,24 +138,21 @@ async def search(
     if filters:
         filtered_search = FilteredSimilaritySearch(
             index_manager=search_service.personalized_search.index_manager,
-            db_session_factory=lambda: db
+            db_session_factory=lambda: db,
         )
 
         ml_results = filtered_search.search_with_filters(
             query_vector=query_embedding,
             filters=filters,
             k=request.limit * 2,  # Get more for better results after enrichment
-            session=db
+            session=db,
         )
     else:
         similarity_search = SimilaritySearch(
             index_manager=search_service.personalized_search.index_manager
         )
 
-        ml_results = similarity_search.search(
-            query_vector=query_embedding,
-            k=request.limit * 2
-        )
+        ml_results = similarity_search.search(query_vector=query_embedding, k=request.limit * 2)
 
     # Step 5: Extract product IDs and scores
     product_ids = [r.product_id for r in ml_results.results]
@@ -176,13 +170,11 @@ async def search(
 
     # Step 6: Enrich with metadata
     enriched_results = metadata_service.enrich_results(
-        product_ids=product_ids,
-        scores=scores,
-        db=db
+        product_ids=product_ids, scores=scores, db=db
     )
 
     # Step 7: Apply pagination
-    paginated_results = enriched_results[request.offset:request.offset + request.limit]
+    paginated_results = enriched_results[request.offset : request.offset + request.limit]
 
     # Step 8: Build response
     total_time_ms = (time.time() - start_time) * 1000
@@ -209,7 +201,7 @@ async def search(
 
     logger.info(
         f"Search completed: {len(enriched_results)} results in {total_time_ms:.2f}ms",
-        extra={"request_id": request_id}
+        extra={"request_id": request_id},
     )
 
     return SearchResponse(**response_data)
@@ -274,10 +266,7 @@ def _get_cached_response(cache_key: str, cache: EmbeddingCache) -> Dict[str, Any
 
 
 def _cache_response(
-    cache_key: str,
-    response_data: Dict[str, Any],
-    cache: EmbeddingCache,
-    ttl: int
+    cache_key: str, response_data: Dict[str, Any], cache: EmbeddingCache, ttl: int
 ) -> bool:
     """Cache search response."""
     try:
@@ -285,8 +274,7 @@ def _cache_response(
         cacheable_data = response_data.copy()
         if "results" in cacheable_data:
             cacheable_data["results"] = [
-                r.dict() if hasattr(r, 'dict') else r
-                for r in cacheable_data["results"]
+                r.dict() if hasattr(r, "dict") else r for r in cacheable_data["results"]
             ]
 
         return cache.redis.set(cache_key, cacheable_data, ttl=ttl)

@@ -34,7 +34,7 @@ class UserEmbeddingBlender:
         long_term_embedding: Optional[np.ndarray],
         session_embedding: Optional[np.ndarray],
         alpha: Optional[float] = None,
-        context: Optional[str] = None
+        context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Blend long-term and session embeddings.
@@ -49,59 +49,56 @@ class UserEmbeddingBlender:
             Dict with blended embedding and metadata
         """
         result = {
-            'blended_embedding': None,
-            'has_long_term': long_term_embedding is not None,
-            'has_session': session_embedding is not None,
-            'alpha': None,
-            'context': context,
-            'success': False,
+            "blended_embedding": None,
+            "has_long_term": long_term_embedding is not None,
+            "has_session": session_embedding is not None,
+            "alpha": None,
+            "context": context,
+            "success": False,
         }
 
         # Get blend weight
         if alpha is None:
             alpha = self._get_alpha_for_context(context)
 
-        result['alpha'] = alpha
+        result["alpha"] = alpha
 
         # Both available - blend them
         if long_term_embedding is not None and session_embedding is not None:
             try:
-                blended = (
-                    alpha * long_term_embedding +
-                    (1.0 - alpha) * session_embedding
-                )
+                blended = alpha * long_term_embedding + (1.0 - alpha) * session_embedding
 
                 # Normalize
                 if self.config.embedding.normalize_embeddings:
                     blended = blended / np.linalg.norm(blended)
 
-                result['blended_embedding'] = blended
-                result['blend_type'] = 'full'
-                result['success'] = True
+                result["blended_embedding"] = blended
+                result["blend_type"] = "full"
+                result["success"] = True
 
             except Exception as e:
                 logger.error(f"Blending failed: {e}")
-                result['error'] = str(e)
+                result["error"] = str(e)
 
         # Only long-term available
         elif long_term_embedding is not None:
             logger.debug("Using long-term embedding only (no session)")
-            result['blended_embedding'] = long_term_embedding
-            result['blend_type'] = 'long_term_only'
-            result['success'] = True
+            result["blended_embedding"] = long_term_embedding
+            result["blend_type"] = "long_term_only"
+            result["success"] = True
 
         # Only session available
         elif session_embedding is not None:
             logger.debug("Using session embedding only (no long-term)")
-            result['blended_embedding'] = session_embedding
-            result['blend_type'] = 'session_only'
-            result['success'] = True
+            result["blended_embedding"] = session_embedding
+            result["blend_type"] = "session_only"
+            result["success"] = True
 
         # Neither available
         else:
             logger.warning("No embeddings available for blending")
-            result['blend_type'] = 'none'
-            result['error'] = 'no_embeddings'
+            result["blend_type"] = "none"
+            result["error"] = "no_embeddings"
 
         return result
 
@@ -117,19 +114,17 @@ class UserEmbeddingBlender:
         """
         # Context-specific alphas
         alphas = {
-            'feed': 0.7,         # Balanced: show established taste + current interest
-            'search': 0.3,       # Session-focused: user searching for specific item
-            'similar': 0.9,      # Long-term: show items matching their style
-            'explore': 0.5,      # Balanced: mix of familiar and new
-            'onboard': 1.0,      # Pure long-term: just style quiz results
+            "feed": 0.7,  # Balanced: show established taste + current interest
+            "search": 0.3,  # Session-focused: user searching for specific item
+            "similar": 0.9,  # Long-term: show items matching their style
+            "explore": 0.5,  # Balanced: mix of familiar and new
+            "onboard": 1.0,  # Pure long-term: just style quiz results
         }
 
         return alphas.get(context, self.config.user_modeling.long_term_alpha)
 
     def add_exploration(
-        self,
-        embedding: np.ndarray,
-        exploration_factor: Optional[float] = None
+        self, embedding: np.ndarray, exploration_factor: Optional[float] = None
     ) -> np.ndarray:
         """
         Add exploration noise to embedding for diversity.
@@ -157,8 +152,8 @@ class UserEmbeddingBlender:
         self,
         long_term_embedding: Optional[np.ndarray],
         session_embedding: Optional[np.ndarray],
-        context: str = 'feed',
-        add_exploration: bool = False
+        context: str = "feed",
+        add_exploration: bool = False,
     ) -> Optional[np.ndarray]:
         """
         Get final embedding for recommendations.
@@ -175,10 +170,10 @@ class UserEmbeddingBlender:
         # Blend embeddings
         result = self.blend(long_term_embedding, session_embedding, context=context)
 
-        if not result['success']:
+        if not result["success"]:
             return None
 
-        embedding = result['blended_embedding']
+        embedding = result["blended_embedding"]
 
         # Add exploration if requested
         if add_exploration:
@@ -200,9 +195,7 @@ def get_user_blender() -> UserEmbeddingBlender:
 
 
 def blend_user_embeddings(
-    long_term: Optional[np.ndarray],
-    session: Optional[np.ndarray],
-    context: str = 'feed'
+    long_term: Optional[np.ndarray], session: Optional[np.ndarray], context: str = "feed"
 ) -> Optional[np.ndarray]:
     """
     Convenience function to blend user embeddings.
@@ -218,7 +211,7 @@ def blend_user_embeddings(
     blender = get_user_blender()
     result = blender.blend(long_term, session, context=context)
 
-    if result['success']:
-        return result['blended_embedding']
+    if result["success"]:
+        return result["blended_embedding"]
     else:
         return None

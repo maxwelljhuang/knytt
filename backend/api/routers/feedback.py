@@ -17,7 +17,7 @@ from ..models.feedback import (
     FeedbackResponse,
     InteractionType,
     INTERACTION_WEIGHTS,
-    SESSION_DECAY
+    SESSION_DECAY,
 )
 from ..errors import APIError
 from ...ml.caching import EmbeddingCache
@@ -33,7 +33,7 @@ async def record_feedback(
     db: Session = Depends(get_db),
     cache: EmbeddingCache = Depends(get_embedding_cache),
     settings: APISettings = Depends(get_settings),
-    request_id: str = Depends(get_request_id)
+    request_id: str = Depends(get_request_id),
 ) -> FeedbackResponse:
     """
     Record user-product interaction for personalization.
@@ -62,15 +62,12 @@ async def record_feedback(
     logger.info(
         f"Feedback: user={request.user_id}, product={request.product_id}, "
         f"type={request.interaction_type}",
-        extra={"request_id": request_id}
+        extra={"request_id": request_id},
     )
 
     # Step 1: Validate interaction type has rating if needed
     if request.interaction_type == InteractionType.RATING and request.rating is None:
-        raise APIError(
-            message="rating field required for interaction_type=rating",
-            status_code=400
-        )
+        raise APIError(message="rating field required for interaction_type=rating", status_code=400)
 
     # Step 2: Store interaction in database
     interaction_id = _store_interaction(request, db)
@@ -83,7 +80,7 @@ async def record_feedback(
             product_id=request.product_id,
             interaction_type=request.interaction_type,
             cache=cache,
-            db=db
+            db=db,
         )
 
     # Step 4: Trigger user embedding update (Celery task)
@@ -94,8 +91,7 @@ async def record_feedback(
         from ...tasks.embeddings import update_user_embedding
 
         result = update_user_embedding.delay(
-            user_external_id=str(request.user_id),
-            max_interactions=50
+            user_external_id=str(request.user_id), max_interactions=50
         )
         task_id = result.id
         embeddings_updated = True  # Marked as queued
@@ -105,10 +101,7 @@ async def record_feedback(
     # Step 5: Invalidate cached recommendations
     cache_invalidated = False
     if settings.enable_cache:
-        cache_invalidated = _invalidate_user_cache(
-            user_id=request.user_id,
-            cache=cache
-        )
+        cache_invalidated = _invalidate_user_cache(user_id=request.user_id, cache=cache)
 
     # Step 6: Build response
     processing_time_ms = (time.time() - start_time) * 1000
@@ -124,12 +117,12 @@ async def record_feedback(
         session_updated=session_updated,
         cache_invalidated=cache_invalidated,
         recorded_at=datetime.utcnow(),
-        processing_time_ms=processing_time_ms
+        processing_time_ms=processing_time_ms,
     )
 
     logger.info(
         f"Feedback recorded: id={interaction_id}, processing_time={processing_time_ms:.2f}ms",
-        extra={"request_id": request_id}
+        extra={"request_id": request_id},
     )
 
     return response
@@ -177,15 +170,17 @@ def _store_interaction(request: FeedbackRequest, db: Session) -> Optional[str]:
                 raise APIError(
                     message="Product not found",
                     details={"product_id": request.product_id},
-                    status_code=404
+                    status_code=404,
                 )
         except ValueError:
             # Not a valid UUID, try looking up by merchant_product_id
-            logger.warning(f"Invalid product UUID: {request.product_id}, treating as merchant_product_id")
+            logger.warning(
+                f"Invalid product UUID: {request.product_id}, treating as merchant_product_id"
+            )
             raise APIError(
                 message="Invalid product ID format (expected UUID)",
                 details={"product_id": request.product_id},
-                status_code=400
+                status_code=400,
             )
 
         # Create interaction record
@@ -198,7 +193,7 @@ def _store_interaction(request: FeedbackRequest, db: Session) -> Optional[str]:
             context=request.context,
             query=request.query,
             position=request.position,
-            interaction_metadata=request.metadata or {}
+            interaction_metadata=request.metadata or {},
         )
 
         db.add(interaction)
@@ -210,7 +205,9 @@ def _store_interaction(request: FeedbackRequest, db: Session) -> Optional[str]:
         user.last_active = datetime.utcnow()
         db.commit()
 
-        logger.info(f"Stored interaction: id={interaction.id}, user={user.id}, product={product.id}")
+        logger.info(
+            f"Stored interaction: id={interaction.id}, user={user.id}, product={product.id}"
+        )
         return str(interaction.id)
 
     except APIError:
@@ -220,9 +217,7 @@ def _store_interaction(request: FeedbackRequest, db: Session) -> Optional[str]:
         logger.error(f"Failed to store interaction: {e}", exc_info=True)
         db.rollback()
         raise APIError(
-            message="Failed to record feedback",
-            details={"error": str(e)},
-            status_code=500
+            message="Failed to record feedback", details={"error": str(e)}, status_code=500
         )
 
 
@@ -231,7 +226,7 @@ def _update_session_embeddings(
     product_id: int,
     interaction_type: InteractionType,
     cache: EmbeddingCache,
-    db: Session
+    db: Session,
 ) -> bool:
     """
     Update user's session embeddings with new interaction.
@@ -273,6 +268,7 @@ def _update_session_embeddings(
 
         # Normalize
         import numpy as np
+
         norm = np.linalg.norm(updated_session)
         if norm > 0:
             updated_session = updated_session / norm
@@ -282,7 +278,7 @@ def _update_session_embeddings(
         success = cache.set_user_session_embedding(
             user_id=str(user_id),
             embedding=updated_session,
-            ttl=decay_minutes * 60  # Convert to seconds
+            ttl=decay_minutes * 60,  # Convert to seconds
         )
 
         if success:
@@ -352,7 +348,7 @@ def _invalidate_user_cache(user_id: int, cache: EmbeddingCache) -> bool:
         embedding_keys = [
             f"user_embeddings:{user_id_str}",
             f"user_long_term:{user_id_str}",
-            f"user_session:{user_id_str}"
+            f"user_session:{user_id_str}",
         ]
 
         try:
@@ -373,11 +369,7 @@ def _invalidate_user_cache(user_id: int, cache: EmbeddingCache) -> bool:
         return False
 
 
-def _get_product_embedding(
-    product_id: int,
-    cache: EmbeddingCache,
-    db: Session
-) -> Optional[any]:
+def _get_product_embedding(product_id: int, cache: EmbeddingCache, db: Session) -> Optional[any]:
     """
     Get product embedding from cache or database.
 

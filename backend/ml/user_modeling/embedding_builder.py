@@ -47,20 +47,17 @@ class UserEmbeddingBuilder:
 
         # Interaction weights (matching feedback.py)
         self.interaction_weights = {
-            'view': 0.1,
-            'click': 0.3,
-            'add_to_cart': 0.6,
-            'purchase': 1.0,
-            'like': 0.5,
-            'share': 0.4,
-            'rating': 0.7,
+            "view": 0.1,
+            "click": 0.3,
+            "add_to_cart": 0.6,
+            "purchase": 1.0,
+            "like": 0.5,
+            "share": 0.4,
+            "rating": 0.7,
         }
 
     def get_recent_interactions(
-        self,
-        user_id: UUID,
-        limit: int = 50,
-        days_back: int = 90
+        self, user_id: UUID, limit: int = 50, days_back: int = 90
     ) -> List[Dict[str, Any]]:
         """
         Fetch recent user interactions from database.
@@ -79,10 +76,9 @@ class UserEmbeddingBuilder:
 
         query = (
             select(UserInteraction)
-            .where(and_(
-                UserInteraction.user_id == user_id,
-                UserInteraction.created_at >= cutoff_date
-            ))
+            .where(
+                and_(UserInteraction.user_id == user_id, UserInteraction.created_at >= cutoff_date)
+            )
             .order_by(desc(UserInteraction.created_at))
             .limit(limit)
         )
@@ -91,22 +87,21 @@ class UserEmbeddingBuilder:
 
         interactions = []
         for row in results:
-            interactions.append({
-                'id': row.id,
-                'product_id': row.product_id,
-                'interaction_type': row.interaction_type,
-                'rating': row.rating,
-                'created_at': row.created_at,
-                'weight': self.interaction_weights.get(row.interaction_type, 0.3)
-            })
+            interactions.append(
+                {
+                    "id": row.id,
+                    "product_id": row.product_id,
+                    "interaction_type": row.interaction_type,
+                    "rating": row.rating,
+                    "created_at": row.created_at,
+                    "weight": self.interaction_weights.get(row.interaction_type, 0.3),
+                }
+            )
 
         logger.info(f"Fetched {len(interactions)} recent interactions for user {user_id}")
         return interactions
 
-    def get_product_embeddings(
-        self,
-        product_ids: List[UUID]
-    ) -> Dict[UUID, np.ndarray]:
+    def get_product_embeddings(self, product_ids: List[UUID]) -> Dict[UUID, np.ndarray]:
         """
         Fetch product embeddings from database.
 
@@ -118,12 +113,11 @@ class UserEmbeddingBuilder:
         """
         from ...db.models import ProductEmbedding
 
-        query = (
-            select(ProductEmbedding)
-            .where(and_(
+        query = select(ProductEmbedding).where(
+            and_(
                 ProductEmbedding.product_id.in_(product_ids),
-                ProductEmbedding.embedding_type == 'text'
-            ))
+                ProductEmbedding.embedding_type == "text",
+            )
         )
 
         results = self.db.execute(query).scalars().all()
@@ -131,7 +125,11 @@ class UserEmbeddingBuilder:
         embeddings = {}
         for row in results:
             # Handle both old array format and new pgvector format
-            embedding_data = row.embedding_vector if hasattr(row, 'embedding_vector') and row.embedding_vector is not None else row.embedding
+            embedding_data = (
+                row.embedding_vector
+                if hasattr(row, "embedding_vector") and row.embedding_vector is not None
+                else row.embedding
+            )
 
             if embedding_data is not None:
                 if isinstance(embedding_data, (list, tuple)):
@@ -146,7 +144,7 @@ class UserEmbeddingBuilder:
         self,
         user_id: UUID,
         current_embedding: Optional[np.ndarray] = None,
-        max_interactions: int = 50
+        max_interactions: int = 50,
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         """
         Build or update user embedding from interaction history.
@@ -171,13 +169,13 @@ class UserEmbeddingBuilder:
                 logger.info(f"Generated cold start embedding for user {user_id}")
 
             return current_embedding, {
-                'interaction_count': 0,
-                'status': 'cold_start',
-                'confidence': 0.0
+                "interaction_count": 0,
+                "status": "cold_start",
+                "confidence": 0.0,
             }
 
         # Get product IDs
-        product_ids = [interaction['product_id'] for interaction in interactions]
+        product_ids = [interaction["product_id"] for interaction in interactions]
 
         # Fetch product embeddings
         product_embeddings = self.get_product_embeddings(product_ids)
@@ -189,20 +187,20 @@ class UserEmbeddingBuilder:
                 current_embedding = cold_start_gen.generate_random_embedding()
 
             return current_embedding, {
-                'interaction_count': len(interactions),
-                'status': 'no_embeddings',
-                'confidence': 0.0
+                "interaction_count": len(interactions),
+                "status": "no_embeddings",
+                "confidence": 0.0,
             }
 
         # Build embedding from interactions
         if current_embedding is None:
             # Initialize with first product embedding (weighted)
             first_interaction = interactions[0]
-            first_product_id = first_interaction['product_id']
+            first_product_id = first_interaction["product_id"]
 
             if first_product_id in product_embeddings:
                 current_embedding = product_embeddings[first_product_id].copy()
-                weight = first_interaction['weight']
+                weight = first_interaction["weight"]
                 current_embedding = current_embedding * weight
 
                 # Normalize
@@ -220,14 +218,14 @@ class UserEmbeddingBuilder:
         # Update embedding with each interaction using EWMA
         processed_count = 0
         for interaction in interactions:
-            product_id = interaction['product_id']
+            product_id = interaction["product_id"]
 
             if product_id not in product_embeddings:
                 continue
 
             product_embedding = product_embeddings[product_id]
-            interaction_type = interaction['interaction_type']
-            weight = interaction['weight']
+            interaction_type = interaction["interaction_type"]
+            weight = interaction["weight"]
 
             # Update using warm user logic
             try:
@@ -235,14 +233,14 @@ class UserEmbeddingBuilder:
                     user_id=str(user_id),
                     current_embedding=current_embedding,
                     interaction={
-                        'product_embedding': product_embedding,
-                        'interaction_type': interaction_type,
-                        'timestamp': interaction['created_at']
-                    }
+                        "product_embedding": product_embedding,
+                        "interaction_type": interaction_type,
+                        "timestamp": interaction["created_at"],
+                    },
                 )
 
-                if result['success']:
-                    current_embedding = result['updated_embedding']
+                if result["success"]:
+                    current_embedding = result["updated_embedding"]
                     processed_count += 1
 
             except Exception as e:
@@ -253,11 +251,11 @@ class UserEmbeddingBuilder:
         confidence = min(processed_count / 20.0, 1.0)  # Full confidence at 20+ interactions
 
         metadata = {
-            'interaction_count': len(interactions),
-            'processed_count': processed_count,
-            'status': 'warm_user',
-            'confidence': confidence,
-            'updated_at': datetime.utcnow()
+            "interaction_count": len(interactions),
+            "processed_count": processed_count,
+            "status": "warm_user",
+            "confidence": confidence,
+            "updated_at": datetime.utcnow(),
         }
 
         logger.info(
@@ -272,8 +270,8 @@ class UserEmbeddingBuilder:
         self,
         user_id: UUID,
         embedding: np.ndarray,
-        embedding_type: str = 'long_term',
-        metadata: Optional[Dict[str, Any]] = None
+        embedding_type: str = "long_term",
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Save user embedding to database.
@@ -291,25 +289,30 @@ class UserEmbeddingBuilder:
 
         try:
             # Check if embedding exists
-            query = select(UserEmbedding).where(and_(
-                UserEmbedding.user_id == user_id,
-                UserEmbedding.embedding_type == embedding_type
-            ))
+            query = select(UserEmbedding).where(
+                and_(
+                    UserEmbedding.user_id == user_id, UserEmbedding.embedding_type == embedding_type
+                )
+            )
             existing = self.db.execute(query).scalar_one_or_none()
 
             if existing:
                 # Update existing
-                if embedding_type == 'long_term':
+                if embedding_type == "long_term":
                     existing.long_term_embedding = embedding.tolist()
-                elif embedding_type == 'session':
+                elif embedding_type == "session":
                     existing.session_embedding = embedding.tolist()
 
                 existing.updated_at = datetime.utcnow()
                 existing.last_interaction_at = datetime.utcnow()
 
                 if metadata:
-                    existing.interaction_count = metadata.get('processed_count', existing.interaction_count)
-                    existing.confidence_score = metadata.get('confidence', existing.confidence_score)
+                    existing.interaction_count = metadata.get(
+                        "processed_count", existing.interaction_count
+                    )
+                    existing.confidence_score = metadata.get(
+                        "confidence", existing.confidence_score
+                    )
 
                 logger.info(f"Updated {embedding_type} embedding for user {user_id}")
 
@@ -318,11 +321,13 @@ class UserEmbeddingBuilder:
                 user_embedding = UserEmbedding(
                     user_id=user_id,
                     embedding_type=embedding_type,
-                    long_term_embedding=embedding.tolist() if embedding_type == 'long_term' else None,
-                    session_embedding=embedding.tolist() if embedding_type == 'session' else None,
+                    long_term_embedding=(
+                        embedding.tolist() if embedding_type == "long_term" else None
+                    ),
+                    session_embedding=embedding.tolist() if embedding_type == "session" else None,
                     last_interaction_at=datetime.utcnow(),
-                    interaction_count=metadata.get('processed_count', 0) if metadata else 0,
-                    confidence_score=metadata.get('confidence', 0.5) if metadata else 0.5
+                    interaction_count=metadata.get("processed_count", 0) if metadata else 0,
+                    confidence_score=metadata.get("confidence", 0.5) if metadata else 0.5,
                 )
 
                 self.db.add(user_embedding)
@@ -336,15 +341,13 @@ class UserEmbeddingBuilder:
                     # Convert UUID to int or string for cache key
                     cache_user_id = str(user_id)
 
-                    if embedding_type == 'long_term':
+                    if embedding_type == "long_term":
                         self.cache.set_user_long_term_embedding(
-                            user_id=cache_user_id,
-                            embedding=embedding
+                            user_id=cache_user_id, embedding=embedding
                         )
-                    elif embedding_type == 'session':
+                    elif embedding_type == "session":
                         self.cache.set_user_session_embedding(
-                            user_id=cache_user_id,
-                            embedding=embedding
+                            user_id=cache_user_id, embedding=embedding
                         )
                     logger.debug(f"Cached {embedding_type} embedding for user {user_id}")
                 except Exception as e:
@@ -358,9 +361,7 @@ class UserEmbeddingBuilder:
             return False
 
     def update_user_embedding(
-        self,
-        user_id: UUID,
-        max_interactions: int = 50
+        self, user_id: UUID, max_interactions: int = 50
     ) -> Tuple[bool, Dict[str, Any]]:
         """
         Update user's long-term embedding from recent interactions.
@@ -378,10 +379,9 @@ class UserEmbeddingBuilder:
             # Get current long-term embedding if it exists
             from ...db.models import UserEmbedding
 
-            query = select(UserEmbedding).where(and_(
-                UserEmbedding.user_id == user_id,
-                UserEmbedding.embedding_type == 'long_term'
-            ))
+            query = select(UserEmbedding).where(
+                and_(UserEmbedding.user_id == user_id, UserEmbedding.embedding_type == "long_term")
+            )
             existing = self.db.execute(query).scalar_one_or_none()
 
             current_embedding = None
@@ -396,22 +396,22 @@ class UserEmbeddingBuilder:
             updated_embedding, metadata = self.build_user_embedding(
                 user_id=user_id,
                 current_embedding=current_embedding,
-                max_interactions=max_interactions
+                max_interactions=max_interactions,
             )
 
             # Save to database and cache
             success = self.save_user_embedding(
                 user_id=user_id,
                 embedding=updated_embedding,
-                embedding_type='long_term',
-                metadata=metadata
+                embedding_type="long_term",
+                metadata=metadata,
             )
 
             return success, metadata
 
         except Exception as e:
             logger.error(f"Failed to update user embedding: {e}", exc_info=True)
-            return False, {'error': str(e)}
+            return False, {"error": str(e)}
 
 
 def get_embedding_builder(db: Session, cache=None) -> UserEmbeddingBuilder:

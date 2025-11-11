@@ -30,17 +30,14 @@ async def health_check() -> Dict[str, str]:
     Returns:
         Simple health status
     """
-    return {
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
 @router.get("/status", status_code=status.HTTP_200_OK)
 async def status_check(
     settings: APISettings = Depends(get_settings),
     db: Session = Depends(get_db),
-    cache: EmbeddingCache = Depends(get_embedding_cache)
+    cache: EmbeddingCache = Depends(get_embedding_cache),
 ) -> Dict[str, Any]:
     """
     Detailed status check.
@@ -58,7 +55,7 @@ async def status_check(
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "version": settings.version,
-        "components": {}
+        "components": {},
     }
 
     # Check database
@@ -66,30 +63,22 @@ async def status_check(
         db.execute("SELECT 1")
         status_info["components"]["database"] = {
             "status": "healthy",
-            "url": settings.database_url.split("@")[-1]  # Hide credentials
+            "url": settings.database_url.split("@")[-1],  # Hide credentials
         }
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
-        status_info["components"]["database"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        status_info["components"]["database"] = {"status": "unhealthy", "error": str(e)}
         status_info["status"] = "degraded"
 
     # Check Redis
     try:
         redis_healthy = cache.redis.ping()
-        status_info["components"]["redis"] = {
-            "status": "healthy" if redis_healthy else "unhealthy"
-        }
+        status_info["components"]["redis"] = {"status": "healthy" if redis_healthy else "unhealthy"}
         if not redis_healthy:
             status_info["status"] = "degraded"
     except Exception as e:
         logger.error(f"Redis health check failed: {e}")
-        status_info["components"]["redis"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        status_info["components"]["redis"] = {"status": "unhealthy", "error": str(e)}
         status_info["status"] = "degraded"
 
     # Check FAISS index
@@ -100,7 +89,7 @@ async def status_check(
         status_info["components"]["faiss_index"] = {
             "status": index_stats.get("status", "unknown"),
             "num_vectors": index_stats.get("num_vectors", 0),
-            "index_type": index_stats.get("index_type", "unknown")
+            "index_type": index_stats.get("index_type", "unknown"),
         }
 
         if index_stats.get("status") != "loaded":
@@ -108,10 +97,7 @@ async def status_check(
 
     except Exception as e:
         logger.error(f"FAISS index health check failed: {e}")
-        status_info["components"]["faiss_index"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        status_info["components"]["faiss_index"] = {"status": "unhealthy", "error": str(e)}
         status_info["status"] = "degraded"
 
     # Get performance metrics
@@ -125,23 +111,21 @@ async def status_check(
             "latency_p95_ms": round(latency_stats["p95"], 2),
             "latency_p99_ms": round(latency_stats["p99"], 2),
             "target_p95_ms": settings.target_p95_latency_ms,
-            "meets_target": latency_stats["p95"] <= settings.target_p95_latency_ms
+            "meets_target": latency_stats["p95"] <= settings.target_p95_latency_ms,
         }
 
     except Exception as e:
         logger.error(f"Performance metrics check failed: {e}")
-        status_info["performance"] = {
-            "error": str(e)
-        }
+        status_info["performance"] = {"error": str(e)}
 
     # Get cache statistics
     try:
         cache_stats = cache.get_cache_stats()
         status_info["cache"] = {
             "cached_products": cache_stats.get("cached_products", 0),
-            "cached_users": cache_stats.get("cached_user_long_term", 0) +
-                           cache_stats.get("cached_user_session", 0),
-            "hot_products": cache_stats.get("hot_products_tracked", 0)
+            "cached_users": cache_stats.get("cached_user_long_term", 0)
+            + cache_stats.get("cached_user_session", 0),
+            "hot_products": cache_stats.get("hot_products_tracked", 0),
         }
     except Exception as e:
         logger.error(f"Cache stats check failed: {e}")
@@ -172,7 +156,7 @@ async def get_metrics() -> Dict[str, Any]:
             "min_ms": round(stats["min"], 2),
             "max_ms": round(stats["max"], 2),
         },
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -187,10 +171,7 @@ async def get_cache_stats() -> Dict[str, Any]:
     cache_service = get_cache_service()
     stats = cache_service.get_statistics()
 
-    return {
-        "cache": stats,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    return {"cache": stats, "timestamp": datetime.utcnow().isoformat()}
 
 
 @router.get("/performance", status_code=status.HTTP_200_OK)
@@ -208,7 +189,7 @@ async def get_performance() -> Dict[str, Any]:
     return {
         "performance": summary,
         "recommendations": recommendations,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -229,14 +210,12 @@ async def get_slow_queries(limit: int = 100) -> Dict[str, Any]:
     return {
         "slow_queries": slow_queries,
         "count": len(slow_queries),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.get("/ready", status_code=status.HTTP_200_OK)
-async def readiness_check(
-    db: Session = Depends(get_db)
-) -> Dict[str, str]:
+async def readiness_check(db: Session = Depends(get_db)) -> Dict[str, str]:
     """
     Kubernetes readiness probe.
 
@@ -253,22 +232,13 @@ async def readiness_check(
         # Check FAISS index
         index_manager = get_index_manager()
         if index_manager.index is None:
-            return {
-                "status": "not_ready",
-                "reason": "FAISS index not loaded"
-            }
+            return {"status": "not_ready", "reason": "FAISS index not loaded"}
 
-        return {
-            "status": "ready",
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        return {"status": "ready", "timestamp": datetime.utcnow().isoformat()}
 
     except Exception as e:
         logger.error(f"Readiness check failed: {e}")
-        return {
-            "status": "not_ready",
-            "reason": str(e)
-        }
+        return {"status": "not_ready", "reason": str(e)}
 
 
 @router.get("/live", status_code=status.HTTP_200_OK)
@@ -281,7 +251,4 @@ async def liveness_check() -> Dict[str, str]:
     Returns:
         Liveness status
     """
-    return {
-        "status": "alive",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    return {"status": "alive", "timestamp": datetime.utcnow().isoformat()}

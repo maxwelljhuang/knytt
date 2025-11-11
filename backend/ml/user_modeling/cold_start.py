@@ -26,10 +26,7 @@ class ColdStartEmbedding:
         """Initialize cold-start embedding generator."""
         self.config = get_ml_config()
 
-    def from_product_selections(
-        self,
-        product_embeddings: List[np.ndarray]
-    ) -> np.ndarray:
+    def from_product_selections(self, product_embeddings: List[np.ndarray]) -> np.ndarray:
         """
         Create user embedding from selected products (style quiz).
 
@@ -52,9 +49,7 @@ class ColdStartEmbedding:
         return user_embedding
 
     def from_style_quiz(
-        self,
-        selected_product_ids: List[str],
-        product_embeddings_dict: Dict[str, np.ndarray]
+        self, selected_product_ids: List[str], product_embeddings_dict: Dict[str, np.ndarray]
     ) -> Dict[str, Any]:
         """
         Create user embedding from style quiz results.
@@ -67,10 +62,10 @@ class ColdStartEmbedding:
             Dict with user embedding and metadata
         """
         result = {
-            'user_embedding': None,
-            'num_selections': len(selected_product_ids),
-            'success': False,
-            'method': 'style_quiz',
+            "user_embedding": None,
+            "num_selections": len(selected_product_ids),
+            "success": False,
+            "method": "style_quiz",
         }
 
         # Get embeddings for selected products
@@ -84,30 +79,29 @@ class ColdStartEmbedding:
                 missing_ids.append(product_id)
                 logger.warning(f"No embedding found for product {product_id}")
 
-        result['missing_ids'] = missing_ids
-        result['valid_selections'] = len(selected_embeddings)
+        result["missing_ids"] = missing_ids
+        result["valid_selections"] = len(selected_embeddings)
 
         if not selected_embeddings:
             logger.error("No valid product embeddings found")
-            result['error'] = 'no_valid_selections'
+            result["error"] = "no_valid_selections"
             return result
 
         # Check minimum selections
         min_selections = self.config.user_modeling.min_quiz_selections
         if len(selected_embeddings) < min_selections:
             logger.warning(
-                f"Only {len(selected_embeddings)} selections, "
-                f"minimum is {min_selections}"
+                f"Only {len(selected_embeddings)} selections, " f"minimum is {min_selections}"
             )
 
         # Create user embedding
         try:
             user_embedding = self.from_product_selections(selected_embeddings)
-            result['user_embedding'] = user_embedding
-            result['success'] = True
+            result["user_embedding"] = user_embedding
+            result["success"] = True
         except Exception as e:
             logger.error(f"Failed to create user embedding: {e}")
-            result['error'] = str(e)
+            result["error"] = str(e)
 
         return result
 
@@ -115,7 +109,7 @@ class ColdStartEmbedding:
         self,
         category_embeddings: Dict[str, np.ndarray],
         preferred_categories: List[str],
-        weights: Optional[List[float]] = None
+        weights: Optional[List[float]] = None,
     ) -> np.ndarray:
         """
         Create user embedding from category preferences.
@@ -133,9 +127,7 @@ class ColdStartEmbedding:
 
         # Get category embeddings
         embeddings = [
-            category_embeddings[cat]
-            for cat in preferred_categories
-            if cat in category_embeddings
+            category_embeddings[cat] for cat in preferred_categories if cat in category_embeddings
         ]
 
         if not embeddings:
@@ -143,7 +135,7 @@ class ColdStartEmbedding:
 
         # Weighted average
         if weights:
-            weights = np.array(weights[:len(embeddings)])
+            weights = np.array(weights[: len(embeddings)])
             weights = weights / weights.sum()  # Normalize weights
             user_embedding = np.average(embeddings, axis=0, weights=weights)
         else:
@@ -156,9 +148,7 @@ class ColdStartEmbedding:
         return user_embedding
 
     def get_exploration_embedding(
-        self,
-        base_embedding: Optional[np.ndarray] = None,
-        exploration_factor: float = 0.1
+        self, base_embedding: Optional[np.ndarray] = None, exploration_factor: float = 0.1
     ) -> np.ndarray:
         """
         Add exploration noise to embedding for diversity.
@@ -209,8 +199,7 @@ def get_cold_start_generator() -> ColdStartEmbedding:
 
 
 def create_user_from_quiz(
-    selected_product_ids: List[str],
-    product_embeddings: Dict[str, np.ndarray]
+    selected_product_ids: List[str], product_embeddings: Dict[str, np.ndarray]
 ) -> np.ndarray:
     """
     Convenience function to create user embedding from quiz.
@@ -225,7 +214,7 @@ def create_user_from_quiz(
     generator = get_cold_start_generator()
     result = generator.from_style_quiz(selected_product_ids, product_embeddings)
 
-    if result['success']:
-        return result['user_embedding']
+    if result["success"]:
+        return result["user_embedding"]
     else:
         raise ValueError(f"Failed to create user embedding: {result.get('error')}")

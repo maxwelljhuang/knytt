@@ -16,10 +16,11 @@ class RecommendationContext(str, Enum):
 
     Determines how recommendations are generated and blended.
     """
-    FEED = "feed"           # General personalized feed
-    SEARCH = "search"       # Search-based recommendations
-    SIMILAR = "similar"     # Similar to a specific product
-    CATEGORY = "category"   # Category-based recommendations
+
+    FEED = "feed"  # General personalized feed
+    SEARCH = "search"  # Search-based recommendations
+    SIMILAR = "similar"  # Similar to a specific product
+    CATEGORY = "category"  # Category-based recommendations
 
 
 class RecommendRequest(BaseModel):
@@ -35,22 +36,20 @@ class RecommendRequest(BaseModel):
     # Recommendation context
     context: RecommendationContext = Field(
         default=RecommendationContext.FEED,
-        description="Recommendation context (feed, search, similar, category)"
+        description="Recommendation context (feed, search, similar, category)",
     )
 
     # Context-specific parameters
     product_id: Optional[int] = Field(
-        None,
-        description="Product ID for similar item recommendations (context=similar)"
+        None, description="Product ID for similar item recommendations (context=similar)"
     )
     category_id: Optional[int] = Field(
-        None,
-        description="Category ID for category recommendations (context=category)"
+        None, description="Category ID for category recommendations (context=category)"
     )
     search_query: Optional[str] = Field(
         None,
         max_length=500,
-        description="Search query for search-based recommendations (context=search)"
+        description="Search query for search-based recommendations (context=search)",
     )
 
     # Filters
@@ -62,18 +61,11 @@ class RecommendRequest(BaseModel):
 
     # Recommendation settings
     use_session_context: bool = Field(
-        default=True,
-        description="Use recent session activity for recommendations"
+        default=True, description="Use recent session activity for recommendations"
     )
-    enable_diversity: bool = Field(
-        default=True,
-        description="Apply result diversity"
-    )
+    enable_diversity: bool = Field(default=True, description="Apply result diversity")
     diversity_lambda: float = Field(
-        default=0.5,
-        ge=0,
-        le=1,
-        description="Diversity weight (0=relevance only, 1=diversity only)"
+        default=0.5, ge=0, le=1, description="Diversity weight (0=relevance only, 1=diversity only)"
     )
 
     class Config:
@@ -81,15 +73,11 @@ class RecommendRequest(BaseModel):
             "example": {
                 "user_id": 123,
                 "context": "feed",
-                "filters": {
-                    "min_price": 30.0,
-                    "max_price": 100.0,
-                    "in_stock": True
-                },
+                "filters": {"min_price": 30.0, "max_price": 100.0, "in_stock": True},
                 "offset": 0,
                 "limit": 20,
                 "use_session_context": True,
-                "enable_diversity": True
+                "enable_diversity": True,
             }
         }
 
@@ -126,18 +114,15 @@ class RecommendResponse(BaseModel):
 
     # User context info
     has_long_term_profile: bool = Field(
-        default=False,
-        description="Whether user has long-term preference profile"
+        default=False, description="Whether user has long-term preference profile"
     )
     has_session_context: bool = Field(
-        default=False,
-        description="Whether user has recent session activity"
+        default=False, description="Whether user has recent session activity"
     )
 
     # Blending info (for transparency)
     blend_weights: Optional[Dict[str, float]] = Field(
-        None,
-        description="Blending weights used (long_term, session, query)"
+        None, description="Blending weights used (long_term, session, query)"
     )
 
     class Config:
@@ -151,7 +136,7 @@ class RecommendResponse(BaseModel):
                         "image_url": "https://example.com/image.jpg",
                         "similarity": 0.92,
                         "rank": 0,
-                        "final_score": 0.87
+                        "final_score": 0.87,
                     }
                 ],
                 "total": 150,
@@ -165,9 +150,6 @@ class RecommendResponse(BaseModel):
                 "cached": False,
                 "has_long_term_profile": True,
                 "has_session_context": True,
-                "blend_weights": {
-                    "long_term": 0.6,
-                    "session": 0.4
-                }
+                "blend_weights": {"long_term": 0.6, "session": 0.4},
             }
         }

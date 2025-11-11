@@ -108,11 +108,7 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.tracker = tracker or get_latency_tracker()
 
-    async def dispatch(
-        self,
-        request: Request,
-        call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Process request and track timing."""
         # Start timer
         start_time = time.time()
@@ -137,7 +133,7 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
                     "method": request.method,
                     "path": request.url.path,
                     "duration_ms": duration_ms,
-                }
+                },
             )
 
         return response

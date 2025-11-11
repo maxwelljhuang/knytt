@@ -46,33 +46,41 @@ async def get_onboarding_products(
         # Query for popular products
         # Get products with the most interactions in the last 30 days
         popular_products_query = (
-            db.query(Product, func.count(UserInteraction.id).label('interaction_count'))
+            db.query(Product, func.count(UserInteraction.id).label("interaction_count"))
             .outerjoin(UserInteraction, Product.id == UserInteraction.product_id)
             .filter(Product.is_active == True)
             # Skip in_stock check for now since no products are marked as in_stock in test data
             # .filter(Product.in_stock == True)
             .filter(
-                (Product.merchant_image_url.isnot(None)) |
-                (Product.aw_image_url.isnot(None)) |
-                (Product.large_image.isnot(None))
+                (Product.merchant_image_url.isnot(None))
+                | (Product.aw_image_url.isnot(None))
+                | (Product.large_image.isnot(None))
             )  # Must have at least one image for moodboard
             .group_by(Product.id)
-            .order_by(desc('interaction_count'))
+            .order_by(desc("interaction_count"))
         )
 
         if request.diverse:
             # If diverse mode, try to get products from different categories
-            categories = db.query(Product.category_name).filter(
-                Product.category_name.isnot(None)
-            ).distinct().limit(10).all()
+            categories = (
+                db.query(Product.category_name)
+                .filter(Product.category_name.isnot(None))
+                .distinct()
+                .limit(10)
+                .all()
+            )
 
             products = []
-            products_per_category = max(2, request.limit // len(categories)) if categories else request.limit
+            products_per_category = (
+                max(2, request.limit // len(categories)) if categories else request.limit
+            )
 
             for category in categories:
-                category_products = popular_products_query.filter(
-                    Product.category_name == category[0]
-                ).limit(products_per_category).all()
+                category_products = (
+                    popular_products_query.filter(Product.category_name == category[0])
+                    .limit(products_per_category)
+                    .all()
+                )
                 products.extend(category_products)
 
                 if len(products) >= request.limit:
@@ -82,9 +90,11 @@ async def get_onboarding_products(
             if len(products) < request.limit:
                 remaining = request.limit - len(products)
                 exclude_ids = [p[0].id for p in products]
-                more_products = popular_products_query.filter(
-                    ~Product.id.in_(exclude_ids)
-                ).limit(remaining).all()
+                more_products = (
+                    popular_products_query.filter(~Product.id.in_(exclude_ids))
+                    .limit(remaining)
+                    .all()
+                )
                 products.extend(more_products)
         else:
             # Just get the most popular products
@@ -92,29 +102,30 @@ async def get_onboarding_products(
 
         # Convert to response format
         onboarding_products = []
-        for product, _ in products[:request.limit]:
+        for product, _ in products[: request.limit]:
             # Use merchant_image_url or aw_image_url, whichever is available
             image_url = product.merchant_image_url or product.aw_image_url or product.large_image
 
-            onboarding_products.append(OnboardingProduct(
-                product_id=str(product.id),
-                title=product.product_name,
-                image_url=image_url,
-                price=float(product.search_price) if product.search_price else 0.0,
-                brand=product.brand_name,
-                category=product.category_name,
-            ))
+            onboarding_products.append(
+                OnboardingProduct(
+                    product_id=str(product.id),
+                    title=product.product_name,
+                    image_url=image_url,
+                    price=float(product.search_price) if product.search_price else 0.0,
+                    brand=product.brand_name,
+                    category=product.category_name,
+                )
+            )
 
         return OnboardingProductsResponse(
-            products=onboarding_products,
-            total=len(onboarding_products)
+            products=onboarding_products, total=len(onboarding_products)
         )
 
     except Exception as e:
         logger.error(f"Failed to fetch onboarding products: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch products for onboarding"
+            detail="Failed to fetch products for onboarding",
         )
 
 
@@ -145,7 +156,7 @@ async def complete_onboarding(
                 preferences_saved=True,
                 selected_products_count=0,
                 message="User has already completed onboarding",
-                next_step="/feed"
+                next_step="/feed",
             )
 
         # Validate selected products exist (selected_product_ids are strings of UUIDs)
@@ -159,19 +170,17 @@ async def complete_onboarding(
             except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid product ID format: {pid}"
+                    detail=f"Invalid product ID format: {pid}",
                 )
 
-        selected_products = db.query(Product).filter(
-            Product.id.in_(product_uuids)
-        ).all()
+        selected_products = db.query(Product).filter(Product.id.in_(product_uuids)).all()
 
         if len(selected_products) != len(request.selected_product_ids):
             found_ids = {str(p.id) for p in selected_products}
             missing_ids = set(request.selected_product_ids) - found_ids
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Some selected products not found: {missing_ids}"
+                detail=f"Some selected products not found: {missing_ids}",
             )
 
         # Get product embeddings from database
@@ -179,10 +188,14 @@ async def complete_onboarding(
 
         for product in selected_products:
             # Query database directly for product embeddings
-            embedding_record = db.query(ProductEmbedding).filter(
-                ProductEmbedding.product_id == product.id,
-                ProductEmbedding.embedding_type == 'text'
-            ).first()
+            embedding_record = (
+                db.query(ProductEmbedding)
+                .filter(
+                    ProductEmbedding.product_id == product.id,
+                    ProductEmbedding.embedding_type == "text",
+                )
+                .first()
+            )
 
             if embedding_record and embedding_record.embedding:
                 product_embeddings_dict[str(product.id)] = np.array(embedding_record.embedding)
@@ -193,28 +206,28 @@ async def complete_onboarding(
         if not product_embeddings_dict:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Could not find embeddings for selected products"
+                detail="Could not find embeddings for selected products",
             )
 
         # Create cold-start embedding from selections
         cold_start = ColdStartEmbedding()
         embedding_result = cold_start.from_style_quiz(
             selected_product_ids=list(product_embeddings_dict.keys()),
-            product_embeddings_dict=product_embeddings_dict
+            product_embeddings_dict=product_embeddings_dict,
         )
 
         # Save the embedding to database and cache
         embedding_builder = UserEmbeddingBuilder(db, cache)
         saved = embedding_builder.save_user_embedding(
             user_id=current_user.id,
-            embedding=embedding_result['user_embedding'],
-            embedding_type='long_term',  # Initialize as long-term profile
+            embedding=embedding_result["user_embedding"],
+            embedding_type="long_term",  # Initialize as long-term profile
             metadata={
-                'method': 'onboarding_style_quiz',
-                'product_count': len(request.selected_product_ids),
-                'confidence': embedding_result.get('confidence', 0.8),
-                'created_at': datetime.utcnow().isoformat()
-            }
+                "method": "onboarding_style_quiz",
+                "product_count": len(request.selected_product_ids),
+                "confidence": embedding_result.get("confidence", 0.8),
+                "created_at": datetime.utcnow().isoformat(),
+            },
         )
 
         # Update user preferences
@@ -232,12 +245,9 @@ async def complete_onboarding(
             interaction = UserInteraction(
                 user_id=current_user.id,
                 product_id=product_id,
-                interaction_type='like',
-                context='onboarding_moodboard',
-                metadata={
-                    'source': 'onboarding',
-                    'step': 'style_quiz'
-                }
+                interaction_type="like",
+                context="onboarding_moodboard",
+                metadata={"source": "onboarding", "step": "style_quiz"},
             )
             db.add(interaction)
 
@@ -254,20 +264,22 @@ async def complete_onboarding(
             message="Onboarding completed successfully! Your style profile has been created.",
             next_step="/feed",
             embedding_metadata={
-                'confidence': embedding_result.get('confidence', 0.8),
-                'method': embedding_result.get('method', 'style_quiz'),
-                'products_used': len(request.selected_product_ids)
-            }
+                "confidence": embedding_result.get("confidence", 0.8),
+                "method": embedding_result.get("method", "style_quiz"),
+                "products_used": len(request.selected_product_ids),
+            },
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to complete onboarding for user {current_user.id}: {e}", exc_info=True)
+        logger.error(
+            f"Failed to complete onboarding for user {current_user.id}: {e}", exc_info=True
+        )
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to complete onboarding. Please try again."
+            detail="Failed to complete onboarding. Please try again.",
         )
 
 
@@ -283,31 +295,36 @@ async def get_onboarding_status(
     the necessary embeddings for recommendations.
     """
     # Check if user has embeddings
-    user_embedding = db.query(UserEmbedding).filter(
-        UserEmbedding.user_id == current_user.id
-    ).first()
+    user_embedding = (
+        db.query(UserEmbedding).filter(UserEmbedding.user_id == current_user.id).first()
+    )
 
     has_embedding = user_embedding is not None and (
-        user_embedding.long_term_embedding is not None or
-        user_embedding.session_embedding is not None
+        user_embedding.long_term_embedding is not None
+        or user_embedding.session_embedding is not None
     )
 
     # Check if user has preferences
     has_preferences = (
-        current_user.price_band_min is not None or
-        current_user.price_band_max is not None or
-        (current_user.preferred_categories and len(current_user.preferred_categories) > 0) or
-        (current_user.style_preferences and len(current_user.style_preferences) > 0)
+        current_user.price_band_min is not None
+        or current_user.price_band_max is not None
+        or (current_user.preferred_categories and len(current_user.preferred_categories) > 0)
+        or (current_user.style_preferences and len(current_user.style_preferences) > 0)
     )
 
     # Get onboarding date if completed
     onboarding_date = None
     if current_user.onboarded:
         # Try to find the first onboarding interaction
-        first_onboarding = db.query(UserInteraction).filter(
-            UserInteraction.user_id == current_user.id,
-            UserInteraction.context == 'onboarding_moodboard'
-        ).order_by(UserInteraction.created_at).first()
+        first_onboarding = (
+            db.query(UserInteraction)
+            .filter(
+                UserInteraction.user_id == current_user.id,
+                UserInteraction.context == "onboarding_moodboard",
+            )
+            .order_by(UserInteraction.created_at)
+            .first()
+        )
 
         if first_onboarding:
             onboarding_date = first_onboarding.created_at.isoformat()
@@ -318,5 +335,5 @@ async def get_onboarding_status(
         has_embedding=has_embedding,
         has_preferences=has_preferences,
         registration_date=current_user.created_at.isoformat(),
-        onboarding_date=onboarding_date
+        onboarding_date=onboarding_date,
     )

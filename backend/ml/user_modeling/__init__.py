@@ -34,26 +34,22 @@ from .embedding_builder import (
 
 __all__ = [
     # Cold start
-    'ColdStartEmbedding',
-    'get_cold_start_generator',
-    'create_user_from_quiz',
-
+    "ColdStartEmbedding",
+    "get_cold_start_generator",
+    "create_user_from_quiz",
     # Warm user
-    'WarmUserEmbedding',
-    'get_warm_user_updater',
-    'update_user_from_interaction',
-
+    "WarmUserEmbedding",
+    "get_warm_user_updater",
+    "update_user_from_interaction",
     # Session
-    'SessionEmbedding',
-    'SessionManager',
-    'get_session_manager',
-
+    "SessionEmbedding",
+    "SessionManager",
+    "get_session_manager",
     # Blending
-    'UserEmbeddingBlender',
-    'get_user_blender',
-    'blend_user_embeddings',
-
+    "UserEmbeddingBlender",
+    "get_user_blender",
+    "blend_user_embeddings",
     # Embedding builder
-    'UserEmbeddingBuilder',
-    'get_embedding_builder',
+    "UserEmbeddingBuilder",
+    "get_embedding_builder",
 ]

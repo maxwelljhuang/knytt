@@ -33,10 +33,7 @@ class MetadataService:
         logger.info("Metadata service initialized")
 
     def enrich_results(
-        self,
-        product_ids: List[int],
-        scores: Dict[int, Dict[str, float]],
-        db: Session
+        self, product_ids: List[int], scores: Dict[int, Dict[str, float]], db: Session
     ) -> List[ProductResult]:
         """
         Enrich search results with product metadata.
@@ -106,11 +103,7 @@ class MetadataService:
 
         return enriched_results
 
-    def _fetch_products_batch(
-        self,
-        product_ids: List[int],
-        db: Session
-    ) -> Dict[int, Dict]:
+    def _fetch_products_batch(self, product_ids: List[int], db: Session) -> Dict[int, Dict]:
         """
         Fetch product metadata in batch.
 
@@ -147,7 +140,8 @@ class MetadataService:
             # Note: The database uses UUID primary keys, so we need to handle the mapping
             # For now, we'll query by product_id as integer (assuming index on products table)
 
-            query = text("""
+            query = text(
+                """
                 SELECT
                     id,
                     product_name,
@@ -175,7 +169,8 @@ class MetadataService:
                     AND COALESCE(merchant_image_url, aw_image_url, large_image) IS NOT NULL
                     AND COALESCE(merchant_image_url, aw_image_url, large_image) != ''
                     AND COALESCE(merchant_image_url, aw_image_url, large_image) ~ '^https?://'
-            """)
+            """
+            )
 
             try:
                 result = db.execute(query, {"product_ids": uncached_ids})
@@ -223,12 +218,7 @@ class MetadataService:
 
         return products_data
 
-    def cache_product_metadata(
-        self,
-        product_id: int,
-        metadata: Dict,
-        ttl: int = 3600
-    ) -> bool:
+    def cache_product_metadata(self, product_id: int, metadata: Dict, ttl: int = 3600) -> bool:
         """
         Cache product metadata in Redis.
 

@@ -25,11 +25,7 @@ class EmbeddingCache:
     - Automatic cache invalidation
     """
 
-    def __init__(
-        self,
-        config: Optional[MLConfig] = None,
-        redis_cache: Optional[RedisCache] = None
-    ):
+    def __init__(self, config: Optional[MLConfig] = None, redis_cache: Optional[RedisCache] = None):
         """
         Initialize embedding cache.
 
@@ -76,10 +72,7 @@ class EmbeddingCache:
         return None
 
     def set_product_embedding(
-        self,
-        product_id: int,
-        embedding: np.ndarray,
-        ttl: Optional[int] = None
+        self, product_id: int, embedding: np.ndarray, ttl: Optional[int] = None
     ) -> bool:
         """
         Cache product embedding.
@@ -95,10 +88,7 @@ class EmbeddingCache:
         key = f"{self.PRODUCT_PREFIX}{product_id}"
         return self.redis.set(key, embedding, ttl=ttl)
 
-    def get_product_embeddings_batch(
-        self,
-        product_ids: List[int]
-    ) -> Dict[int, np.ndarray]:
+    def get_product_embeddings_batch(self, product_ids: List[int]) -> Dict[int, np.ndarray]:
         """
         Get multiple product embeddings from cache.
 
@@ -128,9 +118,7 @@ class EmbeddingCache:
         return result
 
     def set_product_embeddings_batch(
-        self,
-        embeddings: Dict[int, np.ndarray],
-        ttl: Optional[int] = None
+        self, embeddings: Dict[int, np.ndarray], ttl: Optional[int] = None
     ) -> bool:
         """
         Cache multiple product embeddings.
@@ -145,10 +133,7 @@ class EmbeddingCache:
         if not embeddings:
             return True
 
-        mapping = {
-            f"{self.PRODUCT_PREFIX}{pid}": emb
-            for pid, emb in embeddings.items()
-        }
+        mapping = {f"{self.PRODUCT_PREFIX}{pid}": emb for pid, emb in embeddings.items()}
 
         return self.redis.set_many(mapping, ttl=ttl)
 
@@ -180,11 +165,7 @@ class EmbeddingCache:
         key = f"{self.USER_LONG_TERM_PREFIX}{user_id}"
         return self.redis.get(key)
 
-    def set_user_long_term_embedding(
-        self,
-        user_id: str,
-        embedding: np.ndarray
-    ) -> bool:
+    def set_user_long_term_embedding(self, user_id: str, embedding: np.ndarray) -> bool:
         """
         Cache user long-term embedding.
 
@@ -212,10 +193,7 @@ class EmbeddingCache:
         return self.redis.get(key)
 
     def set_user_session_embedding(
-        self,
-        user_id: str,
-        embedding: np.ndarray,
-        ttl: Optional[int] = None
+        self, user_id: str, embedding: np.ndarray, ttl: Optional[int] = None
     ) -> bool:
         """
         Cache user session embedding.
@@ -232,10 +210,7 @@ class EmbeddingCache:
         session_ttl = ttl or 1800  # 30 minutes default for sessions
         return self.redis.set(key, embedding, ttl=session_ttl)
 
-    def get_user_embeddings(
-        self,
-        user_id: str
-    ) -> Dict[str, Optional[np.ndarray]]:
+    def get_user_embeddings(self, user_id: str) -> Dict[str, Optional[np.ndarray]]:
         """
         Get both long-term and session embeddings for a user.
 
@@ -248,10 +223,7 @@ class EmbeddingCache:
         long_term = self.get_user_long_term_embedding(user_id)
         session = self.get_user_session_embedding(user_id)
 
-        return {
-            'long_term': long_term,
-            'session': session
-        }
+        return {"long_term": long_term, "session": session}
 
     def delete_user_embeddings(self, user_id: str) -> int:
         """
@@ -312,11 +284,7 @@ class EmbeddingCache:
             logger.error(f"Error getting hot products: {e}")
             return []
 
-    def is_hot_product(
-        self,
-        product_id: int,
-        threshold: int = 100
-    ) -> bool:
+    def is_hot_product(self, product_id: int, threshold: int = 100) -> bool:
         """
         Check if a product is considered "hot" (frequently viewed).
 
@@ -336,9 +304,7 @@ class EmbeddingCache:
         return view_count >= threshold
 
     def warm_cache_for_hot_products(
-        self,
-        product_embeddings: Dict[int, np.ndarray],
-        top_n: int = 1000
+        self, product_embeddings: Dict[int, np.ndarray], top_n: int = 1000
     ) -> int:
         """
         Warm cache with embeddings for hot products.
@@ -353,11 +319,7 @@ class EmbeddingCache:
         hot_products = self.get_hot_products(limit=top_n)
 
         # Filter to only hot products that we have embeddings for
-        to_cache = {
-            pid: emb
-            for pid, emb in product_embeddings.items()
-            if pid in hot_products
-        }
+        to_cache = {pid: emb for pid, emb in product_embeddings.items() if pid in hot_products}
 
         if to_cache:
             self.set_product_embeddings_batch(to_cache, ttl=self.hot_product_ttl)
@@ -411,16 +373,16 @@ class EmbeddingCache:
             hot_products_count = client.zcard(self.HOT_PRODUCTS_KEY)
 
             return {
-                'cached_products': product_keys,
-                'cached_user_long_term': user_lt_keys,
-                'cached_user_session': user_sess_keys,
-                'hot_products_tracked': hot_products_count,
-                'redis_connected': self.redis.ping(),
+                "cached_products": product_keys,
+                "cached_user_long_term": user_lt_keys,
+                "cached_user_session": user_sess_keys,
+                "hot_products_tracked": hot_products_count,
+                "redis_connected": self.redis.ping(),
             }
 
         except Exception as e:
             logger.error(f"Error getting cache stats: {e}")
             return {
-                'error': str(e),
-                'redis_connected': False,
+                "error": str(e),
+                "redis_connected": False,
             }

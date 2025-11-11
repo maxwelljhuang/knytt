@@ -82,7 +82,7 @@ class CeleryTaskMonitor:
             kwargs=kwargs,
             user_id=user_id,
             metadata=metadata or {},
-            status='PENDING',
+            status="PENDING",
         )
 
         db.add(task_exec)
@@ -148,9 +148,9 @@ class CeleryTaskMonitor:
 
         # Update timing
         now = datetime.utcnow()
-        if status == 'STARTED' and not task_exec.started_at:
+        if status == "STARTED" and not task_exec.started_at:
             task_exec.started_at = now
-        if status in ('SUCCESS', 'FAILURE', 'REVOKED') and not task_exec.completed_at:
+        if status in ("SUCCESS", "FAILURE", "REVOKED") and not task_exec.completed_at:
             task_exec.completed_at = now
 
         # Update results/errors
@@ -196,7 +196,7 @@ class CeleryTaskMonitor:
             # If not in DB but include_celery_state, try fetching from Celery
             if include_celery_state:
                 async_result = AsyncResult(task_id, app=self.celery_app)
-                if async_result.state != 'PENDING' or async_result.result is not None:
+                if async_result.state != "PENDING" or async_result.result is not None:
                     # Create minimal response from Celery state
                     return self._celery_result_to_response(task_id, async_result)
             return None
@@ -299,7 +299,15 @@ class CeleryTaskMonitor:
 
         # Count by status
         status_counts = {}
-        for status_val in ['PENDING', 'STARTED', 'PROGRESS', 'SUCCESS', 'FAILURE', 'REVOKED', 'RETRY']:
+        for status_val in [
+            "PENDING",
+            "STARTED",
+            "PROGRESS",
+            "SUCCESS",
+            "FAILURE",
+            "REVOKED",
+            "RETRY",
+        ]:
             stmt = select(func.count(TaskExecution.id)).where(TaskExecution.status == status_val)
             if filters:
                 stmt = stmt.where(and_(*filters))
@@ -307,10 +315,9 @@ class CeleryTaskMonitor:
             status_counts[status_val.lower()] = result.scalar_one()
 
         # Count by type
-        type_stmt = select(
-            TaskExecution.task_type,
-            func.count(TaskExecution.id)
-        ).group_by(TaskExecution.task_type)
+        type_stmt = select(TaskExecution.task_type, func.count(TaskExecution.id)).group_by(
+            TaskExecution.task_type
+        )
         if filters:
             type_stmt = type_stmt.where(and_(*filters))
         type_result = await db.execute(type_stmt)
@@ -318,8 +325,8 @@ class CeleryTaskMonitor:
 
         # Calculate durations
         duration_stmt = select(
-            func.avg(func.extract('epoch', TaskExecution.completed_at - TaskExecution.started_at)),
-            func.sum(func.extract('epoch', TaskExecution.completed_at - TaskExecution.started_at)),
+            func.avg(func.extract("epoch", TaskExecution.completed_at - TaskExecution.started_at)),
+            func.sum(func.extract("epoch", TaskExecution.completed_at - TaskExecution.started_at)),
         ).where(
             and_(
                 TaskExecution.started_at.isnot(None),
@@ -365,13 +372,13 @@ class CeleryTaskMonitor:
 
         return TaskStatsResponse(
             total_tasks=total_tasks,
-            pending=status_counts.get('pending', 0),
-            started=status_counts.get('started', 0),
-            in_progress=status_counts.get('progress', 0),
-            success=status_counts.get('success', 0),
-            failure=status_counts.get('failure', 0),
-            revoked=status_counts.get('revoked', 0),
-            retry=status_counts.get('retry', 0),
+            pending=status_counts.get("pending", 0),
+            started=status_counts.get("started", 0),
+            in_progress=status_counts.get("progress", 0),
+            success=status_counts.get("success", 0),
+            failure=status_counts.get("failure", 0),
+            revoked=status_counts.get("revoked", 0),
+            retry=status_counts.get("retry", 0),
             by_type=by_type,
             avg_duration_seconds=float(avg_duration) if avg_duration else None,
             total_duration_seconds=float(total_duration) if total_duration else None,
@@ -410,18 +417,24 @@ class CeleryTaskMonitor:
                 if stats:
                     for worker_name, worker_stats in stats.items():
                         active_count = len(active_tasks.get(worker_name, [])) if active_tasks else 0
-                        reserved_count = len(reserved_tasks.get(worker_name, [])) if reserved_tasks else 0
+                        reserved_count = (
+                            len(reserved_tasks.get(worker_name, [])) if reserved_tasks else 0
+                        )
 
                         workers.append(
                             CeleryWorkerInfo(
                                 hostname=worker_name,
                                 active=True,
-                                concurrency=worker_stats.get('pool', {}).get('max-concurrency', 1),
-                                pool=worker_stats.get('pool', {}).get('implementation', 'unknown'),
-                                max_tasks_per_child=worker_stats.get('pool', {}).get('max-tasks-per-child'),
+                                concurrency=worker_stats.get("pool", {}).get("max-concurrency", 1),
+                                pool=worker_stats.get("pool", {}).get("implementation", "unknown"),
+                                max_tasks_per_child=worker_stats.get("pool", {}).get(
+                                    "max-tasks-per-child"
+                                ),
                                 active_tasks=active_count,
                                 reserved_tasks=reserved_count,
-                                total_processed=worker_stats.get('total', {}).get('tasks', {}).get('total'),
+                                total_processed=worker_stats.get("total", {})
+                                .get("tasks", {})
+                                .get("total"),
                             )
                         )
                 else:
@@ -434,7 +447,7 @@ class CeleryTaskMonitor:
         result_backend_connected = False
         try:
             # Try to access result backend
-            test_result = AsyncResult('test-task-id', app=self.celery_app)
+            test_result = AsyncResult("test-task-id", app=self.celery_app)
             result_backend_connected = True
         except Exception as e:
             logger.error(f"Failed to connect to result backend: {e}")
@@ -445,8 +458,8 @@ class CeleryTaskMonitor:
 
         # Mask sensitive broker URL
         broker_url = str(self.celery_app.conf.broker_url)
-        if '@' in broker_url:
-            broker_url = broker_url.split('@')[-1]
+        if "@" in broker_url:
+            broker_url = broker_url.split("@")[-1]
 
         return CeleryHealthResponse(
             broker_connected=broker_connected,
@@ -479,7 +492,7 @@ class CeleryTaskMonitor:
         async_result = AsyncResult(task_id, app=self.celery_app)
 
         if terminate:
-            async_result.revoke(terminate=True, signal='SIGKILL')
+            async_result.revoke(terminate=True, signal="SIGKILL")
             message = "Task terminated forcefully"
         else:
             async_result.revoke()
@@ -489,25 +502,27 @@ class CeleryTaskMonitor:
         await self.update_task_status(
             db,
             task_id,
-            status='REVOKED',
+            status="REVOKED",
             error=message,
         )
 
         return TaskCancelResponse(
             task_id=task_id,
-            status='REVOKED',
+            status="REVOKED",
             message=message,
         )
 
     def _task_exec_to_response(self, task_exec: TaskExecution) -> TaskExecutionResponse:
         """Convert TaskExecution ORM model to Pydantic response."""
         progress = None
-        if any([
-            task_exec.progress_percent is not None,
-            task_exec.progress_current is not None,
-            task_exec.progress_total is not None,
-            task_exec.progress_message is not None,
-        ]):
+        if any(
+            [
+                task_exec.progress_percent is not None,
+                task_exec.progress_current is not None,
+                task_exec.progress_total is not None,
+                task_exec.progress_message is not None,
+            ]
+        ):
             progress = TaskProgressInfo(
                 percent=task_exec.progress_percent,
                 current=task_exec.progress_current,
@@ -541,13 +556,15 @@ class CeleryTaskMonitor:
             is_active=task_exec.is_active,
         )
 
-    def _celery_result_to_response(self, task_id: str, async_result: AsyncResult) -> TaskExecutionResponse:
+    def _celery_result_to_response(
+        self, task_id: str, async_result: AsyncResult
+    ) -> TaskExecutionResponse:
         """Create minimal TaskExecutionResponse from Celery AsyncResult."""
         return TaskExecutionResponse(
-            id=UUID('00000000-0000-0000-0000-000000000000'),  # Dummy ID
+            id=UUID("00000000-0000-0000-0000-000000000000"),  # Dummy ID
             task_id=task_id,
-            task_name='unknown',
-            task_type='unknown',
+            task_name="unknown",
+            task_type="unknown",
             status=async_result.state,
             progress=None,
             args=None,
@@ -566,5 +583,5 @@ class CeleryTaskMonitor:
             traceback=async_result.traceback if async_result.failed() else None,
             user_id=None,
             is_finished=async_result.ready(),
-            is_active=async_result.state in ('STARTED', 'PROGRESS'),
+            is_active=async_result.state in ("STARTED", "PROGRESS"),
         )

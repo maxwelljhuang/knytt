@@ -20,7 +20,7 @@ class APIError(Exception):
         self,
         message: str,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-        details: dict = None
+        details: dict = None,
     ):
         self.message = message
         self.status_code = status_code
@@ -33,9 +33,7 @@ class SearchError(APIError):
 
     def __init__(self, message: str, details: dict = None):
         super().__init__(
-            message=message,
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            details=details
+            message=message, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, details=details
         )
 
 
@@ -44,9 +42,7 @@ class EmbeddingError(APIError):
 
     def __init__(self, message: str, details: dict = None):
         super().__init__(
-            message=message,
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            details=details
+            message=message, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, details=details
         )
 
 
@@ -57,7 +53,7 @@ class ResourceNotFoundError(APIError):
         super().__init__(
             message=f"{resource} not found: {resource_id}",
             status_code=status.HTTP_404_NOT_FOUND,
-            details={"resource": resource, "id": resource_id}
+            details={"resource": resource, "id": resource_id},
         )
 
 
@@ -65,11 +61,7 @@ class InvalidRequestError(APIError):
     """Exception raised for invalid requests."""
 
     def __init__(self, message: str, details: dict = None):
-        super().__init__(
-            message=message,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            details=details
-        )
+        super().__init__(message=message, status_code=status.HTTP_400_BAD_REQUEST, details=details)
 
 
 def setup_error_handlers(app: FastAPI) -> None:
@@ -89,7 +81,7 @@ def setup_error_handlers(app: FastAPI) -> None:
                 "status_code": exc.status_code,
                 "details": exc.details,
                 "path": request.url.path,
-            }
+            },
         )
 
         return JSONResponse(
@@ -100,16 +92,24 @@ def setup_error_handlers(app: FastAPI) -> None:
                     "type": exc.__class__.__name__,
                     "details": exc.details,
                 }
-            }
+            },
         )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(request: Request, exc: RequestValidationError):
         """Handle request validation errors."""
-        logger.warning(
-            f"Validation error: {exc}",
-            extra={"path": request.url.path}
-        )
+        logger.warning(f"Validation error: {exc}", extra={"path": request.url.path})
+
+        # Convert error details to JSON-serializable format
+        errors = []
+        for error in exc.errors():
+            errors.append(
+                {
+                    "loc": error.get("loc", []),
+                    "msg": str(error.get("msg", "")),
+                    "type": error.get("type", ""),
+                }
+            )
 
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -117,18 +117,15 @@ def setup_error_handlers(app: FastAPI) -> None:
                 "error": {
                     "message": "Request validation failed",
                     "type": "ValidationError",
-                    "details": exc.errors(),
+                    "details": errors,
                 }
-            }
+            },
         )
 
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
         """Handle value errors."""
-        logger.warning(
-            f"Value error: {exc}",
-            extra={"path": request.url.path}
-        )
+        logger.warning(f"Value error: {exc}", extra={"path": request.url.path})
 
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -137,17 +134,13 @@ def setup_error_handlers(app: FastAPI) -> None:
                     "message": str(exc),
                     "type": "ValueError",
                 }
-            }
+            },
         )
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
         """Handle unexpected exceptions."""
-        logger.error(
-            f"Unexpected error: {exc}",
-            exc_info=True,
-            extra={"path": request.url.path}
-        )
+        logger.error(f"Unexpected error: {exc}", exc_info=True, extra={"path": request.url.path})
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -156,5 +149,5 @@ def setup_error_handlers(app: FastAPI) -> None:
                     "message": "An unexpected error occurred",
                     "type": "InternalServerError",
                 }
-            }
+            },
         )

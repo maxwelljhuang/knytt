@@ -27,6 +27,7 @@ class UserContext:
 
     Contains user embeddings and metadata needed for personalization.
     """
+
     user_id: Optional[int] = None
     long_term_embedding: Optional[np.ndarray] = None
     session_embedding: Optional[np.ndarray] = None
@@ -52,11 +53,7 @@ class PersonalizedSearch:
     - Similar items (emphasize product similarity)
     """
 
-    def __init__(
-        self,
-        config: Optional[MLConfig] = None,
-        db_session_factory=None
-    ):
+    def __init__(self, config: Optional[MLConfig] = None, db_session_factory=None):
         """
         Initialize personalized search.
 
@@ -70,13 +67,12 @@ class PersonalizedSearch:
         # Initialize components
         self.index_manager = get_index_manager()
         self.similarity_search = SimilaritySearch(
-            config=self.config,
-            index_manager=self.index_manager
+            config=self.config, index_manager=self.index_manager
         )
         self.filtered_search = FilteredSimilaritySearch(
             config=self.config,
             index_manager=self.index_manager,
-            db_session_factory=db_session_factory
+            db_session_factory=db_session_factory,
         )
         self.blender = UserEmbeddingBlender()
         self.session_manager = SessionManager()
@@ -91,7 +87,7 @@ class PersonalizedSearch:
         context: str = "feed",
         use_ranking: bool = True,
         ranking_config: Optional[RankingConfig] = None,
-        session=None
+        session=None,
     ) -> SearchResults:
         """
         Generate personalized recommendations for a user.
@@ -115,11 +111,7 @@ class PersonalizedSearch:
             # No user embeddings available, return empty results
             logger.warning(f"No query vector available for user {user_context.user_id}")
             return SearchResults(
-                results=[],
-                query_vector_shape=(0,),
-                k=k,
-                total_found=0,
-                search_time_ms=0.0
+                results=[], query_vector_shape=(0,), k=k, total_found=0, search_time_ms=0.0
             )
 
         # Perform search (with or without filters)
@@ -128,12 +120,11 @@ class PersonalizedSearch:
                 query_vector=query_vector,
                 filters=filters,
                 k=k * 2 if use_ranking else k,  # Get more for ranking
-                session=session
+                session=session,
             )
         else:
             results = self.similarity_search.search(
-                query_vector=query_vector,
-                k=k * 2 if use_ranking else k
+                query_vector=query_vector, k=k * 2 if use_ranking else k
             )
 
         # Apply heuristic ranking if enabled
@@ -142,7 +133,7 @@ class PersonalizedSearch:
                 results=results,
                 user_context=user_context,
                 ranking_config=ranking_config,
-                session=session
+                session=session,
             )
 
             # Trim to requested k
@@ -164,7 +155,7 @@ class PersonalizedSearch:
         k: int = 50,
         filters: Optional[ProductFilters] = None,
         use_ranking: bool = True,
-        session=None
+        session=None,
     ) -> SearchResults:
         """
         Text search with user personalization.
@@ -190,7 +181,7 @@ class PersonalizedSearch:
             filters=filters,
             context="search",
             use_ranking=use_ranking,
-            session=session
+            session=session,
         )
 
     def find_similar_for_user(
@@ -201,7 +192,7 @@ class PersonalizedSearch:
         filters: Optional[ProductFilters] = None,
         blend_ratio: float = 0.9,
         use_ranking: bool = True,
-        session=None
+        session=None,
     ) -> SearchResults:
         """
         Find similar items with user personalization.
@@ -229,10 +220,7 @@ class PersonalizedSearch:
 
         # Blend product and user vectors
         if user_vector is not None and not user_context.is_anonymous:
-            query_vector = (
-                blend_ratio * product_vector +
-                (1 - blend_ratio) * user_vector
-            )
+            query_vector = blend_ratio * product_vector + (1 - blend_ratio) * user_vector
             # Normalize
             query_vector = query_vector / np.linalg.norm(query_vector)
         else:
@@ -245,26 +233,20 @@ class PersonalizedSearch:
                 query_vector=query_vector,
                 filters=filters,
                 k=k * 2 if use_ranking else k,
-                session=session
+                session=session,
             )
         else:
             results = self.similarity_search.search(
-                query_vector=query_vector,
-                k=k * 2 if use_ranking else k
+                query_vector=query_vector, k=k * 2 if use_ranking else k
             )
 
         # Remove the query product from results
-        results.results = [
-            r for r in results.results
-            if r.product_id != product_id
-        ]
+        results.results = [r for r in results.results if r.product_id != product_id]
 
         # Apply ranking
         if use_ranking and len(results.results) > 0:
             results = self._apply_ranking(
-                results=results,
-                user_context=user_context,
-                session=session
+                results=results, user_context=user_context, session=session
             )
 
         # Trim to k and re-rank
@@ -280,7 +262,7 @@ class PersonalizedSearch:
         k: int = 50,
         filters: Optional[ProductFilters] = None,
         strategy: str = "popular",
-        session=None
+        session=None,
     ) -> SearchResults:
         """
         Generate recommendations for anonymous users.
@@ -305,17 +287,11 @@ class PersonalizedSearch:
         # TODO: Implement anonymous user strategies
 
         return SearchResults(
-            results=[],
-            query_vector_shape=(0,),
-            k=k,
-            total_found=0,
-            search_time_ms=0.0
+            results=[], query_vector_shape=(0,), k=k, total_found=0, search_time_ms=0.0
         )
 
     def _get_user_query_vector(
-        self,
-        user_context: UserContext,
-        context: str
+        self, user_context: UserContext, context: str
     ) -> Optional[np.ndarray]:
         """
         Get query vector for user based on context.
@@ -338,19 +314,17 @@ class PersonalizedSearch:
 
         # Blend based on context
         blend_result = self.blender.blend(
-            long_term_embedding=long_term,
-            session_embedding=session_emb,
-            context=context
+            long_term_embedding=long_term, session_embedding=session_emb, context=context
         )
 
-        return blend_result['blended_embedding']
+        return blend_result["blended_embedding"]
 
     def _apply_ranking(
         self,
         results: SearchResults,
         user_context: UserContext,
         ranking_config: Optional[RankingConfig] = None,
-        session=None
+        session=None,
     ) -> SearchResults:
         """
         Apply heuristic ranking to search results.
@@ -373,28 +347,20 @@ class PersonalizedSearch:
         # TODO: Implement actual database queries
         # For now, use mock data
         popularity_scores = self._get_popularity_scores(product_ids, session)
-        price_affinity_scores = self._get_price_affinity_scores(
-            product_ids, user_context, session
-        )
-        brand_match_scores = self._get_brand_match_scores(
-            product_ids, user_context, session
-        )
+        price_affinity_scores = self._get_price_affinity_scores(product_ids, user_context, session)
+        brand_match_scores = self._get_brand_match_scores(product_ids, user_context, session)
 
         # Apply ranking
         ranked_results = ranker.rank_results(
             search_results=results,
             popularity_scores=popularity_scores,
             price_affinity_scores=price_affinity_scores,
-            brand_match_scores=brand_match_scores
+            brand_match_scores=brand_match_scores,
         )
 
         return ranked_results
 
-    def _get_popularity_scores(
-        self,
-        product_ids: List[int],
-        session
-    ) -> Dict[int, float]:
+    def _get_popularity_scores(self, product_ids: List[int], session) -> Dict[int, float]:
         """
         Get popularity scores for products.
 
@@ -410,10 +376,7 @@ class PersonalizedSearch:
         return {pid: 0.5 for pid in product_ids}
 
     def _get_price_affinity_scores(
-        self,
-        product_ids: List[int],
-        user_context: UserContext,
-        session
+        self, product_ids: List[int], user_context: UserContext, session
     ) -> Dict[int, float]:
         """
         Get price affinity scores for products.
@@ -431,10 +394,7 @@ class PersonalizedSearch:
         return {pid: 0.5 for pid in product_ids}
 
     def _get_brand_match_scores(
-        self,
-        product_ids: List[int],
-        user_context: UserContext,
-        session
+        self, product_ids: List[int], user_context: UserContext, session
     ) -> Dict[int, float]:
         """
         Get brand match scores for products.
@@ -457,7 +417,7 @@ def create_user_context(
     long_term_embedding: Optional[np.ndarray] = None,
     session_embedding: Optional[np.ndarray] = None,
     price_profile: Optional[Dict[str, float]] = None,
-    brand_preferences: Optional[Dict[int, float]] = None
+    brand_preferences: Optional[Dict[int, float]] = None,
 ) -> UserContext:
     """
     Convenience function to create UserContext.
@@ -480,5 +440,5 @@ def create_user_context(
         session_embedding=session_embedding,
         is_anonymous=is_anonymous,
         price_profile=price_profile,
-        brand_preferences=brand_preferences
+        brand_preferences=brand_preferences,
     )

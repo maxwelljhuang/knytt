@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class FilterOperator(Enum):
     """Comparison operators for filters."""
+
     EQ = "="
     NE = "!="
     GT = ">"
@@ -35,6 +36,7 @@ class ProductFilter:
         ProductFilter("price", FilterOperator.LTE, 100.0)  # price <= 100
         ProductFilter("merchant_id", FilterOperator.IN, [1, 2, 3])
     """
+
     field: str
     operator: FilterOperator
     value: Any
@@ -48,7 +50,7 @@ class ProductFilter:
         """
         if self.operator in [FilterOperator.IN, FilterOperator.NOT_IN]:
             # Handle IN/NOT IN with list values
-            placeholders = ','.join(['%s'] * len(self.value))
+            placeholders = ",".join(["%s"] * len(self.value))
             sql = f"{self.field} {self.operator.value} ({placeholders})"
             return sql, self.value
         elif self.operator in [FilterOperator.LIKE, FilterOperator.ILIKE]:
@@ -123,19 +125,25 @@ class ProductFilters:
         if self.in_stock_only:
             filters.append(ProductFilter("in_stock", FilterOperator.EQ, True))
         if self.min_stock_quantity > 0:
-            filters.append(ProductFilter("stock_quantity", FilterOperator.GTE, self.min_stock_quantity))
+            filters.append(
+                ProductFilter("stock_quantity", FilterOperator.GTE, self.min_stock_quantity)
+            )
 
         # Merchant filters
         if self.merchant_ids:
             filters.append(ProductFilter("merchant_id", FilterOperator.IN, self.merchant_ids))
         if self.exclude_merchant_ids:
-            filters.append(ProductFilter("merchant_id", FilterOperator.NOT_IN, self.exclude_merchant_ids))
+            filters.append(
+                ProductFilter("merchant_id", FilterOperator.NOT_IN, self.exclude_merchant_ids)
+            )
 
         # Category filters
         if self.category_ids:
             filters.append(ProductFilter("category_id", FilterOperator.IN, self.category_ids))
         if self.exclude_category_ids:
-            filters.append(ProductFilter("category_id", FilterOperator.NOT_IN, self.exclude_category_ids))
+            filters.append(
+                ProductFilter("category_id", FilterOperator.NOT_IN, self.exclude_category_ids)
+            )
 
         # Brand filters
         if self.brand_ids:
@@ -207,10 +215,7 @@ class FilteredSearcher:
         logger.info("Filtered searcher initialized")
 
     def get_filtered_product_ids(
-        self,
-        session,
-        filters: ProductFilters,
-        limit: Optional[int] = None
+        self, session, filters: ProductFilters, limit: Optional[int] = None
     ) -> List[int]:
         """
         Get list of product IDs that match filters.
@@ -246,10 +251,7 @@ class FilteredSearcher:
         return product_ids
 
     def get_filtered_embeddings(
-        self,
-        session,
-        filters: ProductFilters,
-        limit: Optional[int] = None
+        self, session, filters: ProductFilters, limit: Optional[int] = None
     ) -> Tuple[np.ndarray, List[int]]:
         """
         Get embeddings for products that match filters.
@@ -294,7 +296,7 @@ class FilteredSearcher:
 
             # Convert pgvector to numpy array
             if isinstance(embedding, str):
-                embedding = np.fromstring(embedding.strip('[]'), sep=',')
+                embedding = np.fromstring(embedding.strip("[]"), sep=",")
             elif isinstance(embedding, (list, tuple)):
                 embedding = np.array(embedding)
 
@@ -308,10 +310,8 @@ class FilteredSearcher:
         return embeddings, product_ids
 
     def build_subset_index(
-        self,
-        embeddings: np.ndarray,
-        product_ids: List[int]
-    ) -> Tuple['faiss.Index', Dict[int, int]]:
+        self, embeddings: np.ndarray, product_ids: List[int]
+    ) -> Tuple["faiss.Index", Dict[int, int]]:
         """
         Build a temporary FAISS index for filtered products.
 
@@ -345,9 +345,7 @@ class FilteredSearcher:
         return index, id_mapping
 
     def filter_product_ids_in_index(
-        self,
-        all_product_ids: List[int],
-        allowed_product_ids: Set[int]
+        self, all_product_ids: List[int], allowed_product_ids: Set[int]
     ) -> Tuple[np.ndarray, Dict[int, int]]:
         """
         Filter product IDs to only those in allowed set.

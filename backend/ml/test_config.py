@@ -47,14 +47,17 @@ def test_dimension_consistency():
 
     config = get_ml_config()
 
-    assert config.embedding.product_embedding_dim == config.user_modeling.user_embedding_dim, \
-        "Product and user embedding dims must match"
+    assert (
+        config.embedding.product_embedding_dim == config.user_modeling.user_embedding_dim
+    ), "Product and user embedding dims must match"
 
-    assert config.embedding.image_embedding_dim == 512, \
-        "Image embedding should be 512-dim for CLIP ViT-B/32"
+    assert (
+        config.embedding.image_embedding_dim == 512
+    ), "Image embedding should be 512-dim for CLIP ViT-B/32"
 
-    assert config.embedding.text_embedding_dim == 512, \
-        "Text embedding should be 512-dim for CLIP ViT-B/32"
+    assert (
+        config.embedding.text_embedding_dim == 512
+    ), "Text embedding should be 512-dim for CLIP ViT-B/32"
 
     print("✓ All dimensions are consistent")
 
@@ -68,7 +71,9 @@ def test_fusion_weights():
     total = config.embedding.image_weight + config.embedding.text_weight
     assert abs(total - 1.0) < 1e-6, f"Fusion weights must sum to 1.0, got {total}"
 
-    print(f"✓ Fusion weights valid: image={config.embedding.image_weight}, text={config.embedding.text_weight}")
+    print(
+        f"✓ Fusion weights valid: image={config.embedding.image_weight}, text={config.embedding.text_weight}"
+    )
 
 
 def test_user_blending_weights():
@@ -80,7 +85,9 @@ def test_user_blending_weights():
     total = config.user_modeling.long_term_alpha + config.user_modeling.session_alpha
     assert abs(total - 1.0) < 1e-6, f"User blending weights must sum to 1.0, got {total}"
 
-    print(f"✓ User blending weights valid: long_term={config.user_modeling.long_term_alpha}, session={config.user_modeling.session_alpha}")
+    print(
+        f"✓ User blending weights valid: long_term={config.user_modeling.long_term_alpha}, session={config.user_modeling.session_alpha}"
+    )
 
 
 def test_cache_directories():
@@ -178,6 +185,7 @@ def main():
         print(f"❌ Configuration test failed: {e}")
         print("=" * 60)
         import traceback
+
         traceback.print_exc()
         return 1
 

@@ -13,12 +13,12 @@ from .users import router as users_router
 from .onboarding import router as onboarding_router
 
 __all__ = [
-    'health_router',
-    'auth_router',
-    'search_router',
-    'recommend_router',
-    'feedback_router',
-    'admin_router',
-    'users_router',
-    'onboarding_router',
+    "health_router",
+    "auth_router",
+    "search_router",
+    "recommend_router",
+    "feedback_router",
+    "admin_router",
+    "users_router",
+    "onboarding_router",
 ]

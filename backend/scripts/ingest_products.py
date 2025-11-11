@@ -23,54 +23,42 @@ from backend.ingestion.csv_processor import CSVIngestionPipeline
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 
 def main():
     """Main function to run CSV ingestion."""
-    parser = argparse.ArgumentParser(description='Ingest product data from CSV')
+    parser = argparse.ArgumentParser(description="Ingest product data from CSV")
+    parser.add_argument("csv_path", type=str, help="Path to CSV file containing product data")
+    parser.add_argument("--merchant-id", type=int, default=1, help="Merchant ID (default: 1)")
     parser.add_argument(
-        'csv_path',
+        "--merchant-name",
         type=str,
-        help='Path to CSV file containing product data'
+        default="Default Merchant",
+        help="Merchant name (default: Default Merchant)",
     )
     parser.add_argument(
-        '--merchant-id',
-        type=int,
-        default=1,
-        help='Merchant ID (default: 1)'
-    )
-    parser.add_argument(
-        '--merchant-name',
-        type=str,
-        default='Default Merchant',
-        help='Merchant name (default: Default Merchant)'
-    )
-    parser.add_argument(
-        '--chunk-size',
+        "--chunk-size",
         type=int,
         default=1000,
-        help='Number of rows to process at once (default: 1000)'
+        help="Number of rows to process at once (default: 1000)",
     )
     parser.add_argument(
-        '--quality-threshold',
+        "--quality-threshold",
         type=float,
         default=0.3,
-        help='Minimum quality score to accept products (0-1, default: 0.3)'
+        help="Minimum quality score to accept products (0-1, default: 0.3)",
     )
     parser.add_argument(
-        '--enable-dedup',
-        action='store_true',
+        "--enable-dedup",
+        action="store_true",
         default=True,
-        help='Enable deduplication (default: True)'
+        help="Enable deduplication (default: True)",
     )
     parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Run validation only without database writes'
+        "--dry-run", action="store_true", help="Run validation only without database writes"
     )
 
     args = parser.parse_args()
@@ -82,7 +70,7 @@ def main():
         sys.exit(1)
 
     # Get database URL from environment
-    db_url = os.getenv('DATABASE_URL')
+    db_url = os.getenv("DATABASE_URL")
     if not db_url:
         logger.error("DATABASE_URL environment variable not set")
         sys.exit(1)
@@ -97,7 +85,7 @@ def main():
             db_url=db_url,
             chunk_size=args.chunk_size,
             quality_threshold=args.quality_threshold,
-            enable_dedup=args.enable_dedup
+            enable_dedup=args.enable_dedup,
         )
 
         # Process CSV file
@@ -106,6 +94,7 @@ def main():
             # For dry run, we'd need to modify the pipeline to support validation-only mode
             # For now, just read and validate the first chunk
             import pandas as pd
+
             df = pd.read_csv(str(csv_path), nrows=100)
             logger.info(f"CSV preview - Shape: {df.shape}")
             logger.info(f"Columns: {list(df.columns)}")
@@ -114,7 +103,7 @@ def main():
             stats = pipeline.process_csv(
                 file_path=str(csv_path),
                 merchant_id=args.merchant_id,
-                merchant_name=args.merchant_name
+                merchant_name=args.merchant_name,
             )
 
             # Display results
@@ -130,17 +119,18 @@ def main():
             logger.info(f"Quality issues: {stats.get('quality_issues', 0)}")
             logger.info(f"Processing time: {stats.get('processing_time', 0):.2f} seconds")
 
-            if stats.get('errors'):
+            if stats.get("errors"):
                 logger.warning(f"Errors encountered: {len(stats['errors'])}")
-                for error in stats['errors'][:5]:  # Show first 5 errors
+                for error in stats["errors"][:5]:  # Show first 5 errors
                     logger.warning(f"  - {error}")
 
     except Exception as e:
         logger.error(f"Ingestion failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

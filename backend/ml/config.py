@@ -12,20 +12,24 @@ from enum import Enum
 # Optional torch import (only needed when actually using models)
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
+
     # Create a mock torch module for configuration
     class _MockTorch:
         class cuda:
             @staticmethod
             def is_available():
                 return False
+
     torch = _MockTorch()
 
 
 class ModelType(Enum):
     """Supported embedding model types."""
+
     CLIP_VIT_B32 = "ViT-B-32"
     CLIP_VIT_L14 = "ViT-L-14"
     SIGLIP_BASE = "ViT-B-16-SigLIP"
@@ -34,6 +38,7 @@ class ModelType(Enum):
 
 class PretrainedSource(Enum):
     """Pretrained model sources."""
+
     OPENAI = "openai"
     LAION400M = "laion400m_e32"
     LAION2B = "laion2b_s34b_b79k"
@@ -80,7 +85,7 @@ class EmbeddingConfig:
     product_embedding_dim: int = 512  # Fused embedding dimension
 
     # Fusion strategy: 'weighted_average' | 'concatenate' | 'late_fusion'
-    fusion_strategy: Literal['weighted_average', 'concatenate', 'late_fusion'] = 'weighted_average'
+    fusion_strategy: Literal["weighted_average", "concatenate", "late_fusion"] = "weighted_average"
 
     # Fusion weights (for weighted_average strategy)
     image_weight: float = 0.7  # Fashion is visual-first
@@ -88,7 +93,7 @@ class EmbeddingConfig:
 
     # Ensure weights sum to 1.0
     def __post_init__(self):
-        if self.fusion_strategy == 'weighted_average':
+        if self.fusion_strategy == "weighted_average":
             total = self.image_weight + self.text_weight
             if abs(total - 1.0) > 1e-6:
                 raise ValueError(f"Fusion weights must sum to 1.0, got {total}")
@@ -103,7 +108,7 @@ class EmbeddingConfig:
 
     # Image preprocessing
     max_image_size: int = 512  # Resize large images to save memory
-    image_formats: list = field(default_factory=lambda: ['jpg', 'jpeg', 'png', 'webp', 'heic'])
+    image_formats: list = field(default_factory=lambda: ["jpg", "jpeg", "png", "webp", "heic"])
 
 
 @dataclass
@@ -115,7 +120,7 @@ class UserModelingConfig:
 
     # Long-term vs session blending
     long_term_alpha: float = 0.7  # Weight for long-term taste profile
-    session_alpha: float = 0.3    # Weight for current session intent
+    session_alpha: float = 0.3  # Weight for current session intent
 
     def __post_init__(self):
         total = self.long_term_alpha + self.session_alpha
@@ -144,12 +149,12 @@ class StorageConfig:
 
     # Primary storage (Postgres with pgvector)
     use_pgvector: bool = True
-    pgvector_index_type: Literal['ivfflat', 'hnsw'] = 'ivfflat'
+    pgvector_index_type: Literal["ivfflat", "hnsw"] = "ivfflat"
     ivfflat_lists: int = 100  # Number of lists for IVFFlat index
 
     # FAISS configuration
     use_faiss: bool = True
-    faiss_index_type: Literal['Flat', 'IVF', 'HNSW'] = 'Flat'  # Start simple for MVP
+    faiss_index_type: Literal["Flat", "IVF", "HNSW"] = "Flat"  # Start simple for MVP
     faiss_index_path: Path = field(default_factory=lambda: Path("models/cache/faiss_index"))
 
     # FAISS build configuration
@@ -232,17 +237,19 @@ class MLConfig:
     def validate(self) -> None:
         """Validate configuration consistency."""
         # Ensure dimensions match
-        assert self.embedding.product_embedding_dim == self.user_modeling.user_embedding_dim, \
-            "Product and user embedding dimensions must match"
+        assert (
+            self.embedding.product_embedding_dim == self.user_modeling.user_embedding_dim
+        ), "Product and user embedding dimensions must match"
 
         # Ensure fusion weights are valid
-        if self.embedding.fusion_strategy == 'weighted_average':
+        if self.embedding.fusion_strategy == "weighted_average":
             assert 0 <= self.embedding.image_weight <= 1, "Image weight must be in [0, 1]"
             assert 0 <= self.embedding.text_weight <= 1, "Text weight must be in [0, 1]"
 
         # Ensure retrieval k values make sense
-        assert self.performance.candidate_retrieval_k >= self.performance.final_results_k, \
-            "Candidate K must be >= final K"
+        assert (
+            self.performance.candidate_retrieval_k >= self.performance.final_results_k
+        ), "Candidate K must be >= final K"
 
 
 # Global configuration instance

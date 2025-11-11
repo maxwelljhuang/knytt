@@ -9,15 +9,15 @@ from .recommend import RecommendRequest, RecommendResponse, RecommendationContex
 from .feedback import FeedbackRequest, FeedbackResponse, InteractionType
 
 __all__ = [
-    'ErrorResponse',
-    'PaginationParams',
-    'SearchRequest',
-    'SearchResponse',
-    'ProductResult',
-    'RecommendRequest',
-    'RecommendResponse',
-    'RecommendationContext',
-    'FeedbackRequest',
-    'FeedbackResponse',
-    'InteractionType',
+    "ErrorResponse",
+    "PaginationParams",
+    "SearchRequest",
+    "SearchResponse",
+    "ProductResult",
+    "RecommendRequest",
+    "RecommendResponse",
+    "RecommendationContext",
+    "FeedbackRequest",
+    "FeedbackResponse",
+    "InteractionType",
 ]

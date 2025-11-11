@@ -11,8 +11,8 @@ from .feedback_handler import (
 )
 
 __all__ = [
-    'FeedbackHandler',
-    'InteractionEvent',
-    'InteractionType',
-    'FeedbackProcessor',
+    "FeedbackHandler",
+    "InteractionEvent",
+    "InteractionType",
+    "FeedbackProcessor",
 ]

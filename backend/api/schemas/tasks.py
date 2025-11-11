@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 class TaskProgressInfo(BaseModel):
     """Task progress information."""
+
     percent: Optional[int] = Field(None, ge=0, le=100, description="Progress percentage (0-100)")
     current: Optional[int] = Field(None, description="Current item being processed")
     total: Optional[int] = Field(None, description="Total items to process")
@@ -18,13 +19,17 @@ class TaskProgressInfo(BaseModel):
 
 class TaskExecutionResponse(BaseModel):
     """Task execution details response."""
+
     id: UUID = Field(..., description="Internal database ID")
     task_id: str = Field(..., description="Celery task ID (UUID)")
     task_name: str = Field(..., description="Task function name")
     task_type: str = Field(..., description="Task category (embedding, ingestion, maintenance)")
 
     # Status
-    status: str = Field(..., description="Task status (PENDING, STARTED, PROGRESS, SUCCESS, FAILURE, REVOKED, RETRY)")
+    status: str = Field(
+        ...,
+        description="Task status (PENDING, STARTED, PROGRESS, SUCCESS, FAILURE, REVOKED, RETRY)",
+    )
     progress: Optional[TaskProgressInfo] = Field(None, description="Task progress information")
 
     # Metadata
@@ -62,6 +67,7 @@ class TaskExecutionResponse(BaseModel):
 
 class TaskExecutionListResponse(BaseModel):
     """Paginated list of task executions."""
+
     tasks: List[TaskExecutionResponse] = Field(..., description="List of task executions")
     total: int = Field(..., description="Total number of tasks matching filters")
     page: int = Field(..., description="Current page number (1-indexed)")
@@ -71,6 +77,7 @@ class TaskExecutionListResponse(BaseModel):
 
 class TaskStatsResponse(BaseModel):
     """Aggregated task statistics."""
+
     total_tasks: int = Field(..., description="Total number of tasks")
     pending: int = Field(..., description="Number of pending tasks")
     started: int = Field(..., description="Number of started tasks")
@@ -84,7 +91,9 @@ class TaskStatsResponse(BaseModel):
     by_type: Dict[str, int] = Field(..., description="Task counts by type")
 
     # Timing
-    avg_duration_seconds: Optional[float] = Field(None, description="Average task duration in seconds")
+    avg_duration_seconds: Optional[float] = Field(
+        None, description="Average task duration in seconds"
+    )
     total_duration_seconds: Optional[float] = Field(None, description="Total duration of all tasks")
 
     # Recent activity
@@ -95,6 +104,7 @@ class TaskStatsResponse(BaseModel):
 
 class CeleryWorkerInfo(BaseModel):
     """Celery worker information."""
+
     hostname: str = Field(..., description="Worker hostname")
     active: bool = Field(..., description="Whether worker is active")
     concurrency: int = Field(..., description="Worker concurrency level")
@@ -111,6 +121,7 @@ class CeleryWorkerInfo(BaseModel):
 
 class CeleryQueueInfo(BaseModel):
     """Celery queue information."""
+
     name: str = Field(..., description="Queue name")
     messages: int = Field(..., description="Number of messages in queue")
     consumers: int = Field(..., description="Number of active consumers")
@@ -118,6 +129,7 @@ class CeleryQueueInfo(BaseModel):
 
 class CeleryHealthResponse(BaseModel):
     """Celery infrastructure health status."""
+
     broker_connected: bool = Field(..., description="Whether broker is connected")
     broker_url: str = Field(..., description="Broker URL (masked)")
     result_backend_connected: bool = Field(..., description="Whether result backend is connected")
@@ -136,6 +148,7 @@ class CeleryHealthResponse(BaseModel):
 
 class TaskDispatchRequest(BaseModel):
     """Request to dispatch a task."""
+
     task_name: str = Field(..., description="Task function name to dispatch")
     args: Optional[List[Any]] = Field(default_factory=list, description="Positional arguments")
     kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Keyword arguments")
@@ -147,6 +160,7 @@ class TaskDispatchRequest(BaseModel):
 
 class TaskDispatchResponse(BaseModel):
     """Response after dispatching a task."""
+
     task_id: str = Field(..., description="Celery task ID")
     task_name: str = Field(..., description="Task function name")
     status: str = Field(..., description="Initial task status")
@@ -156,12 +170,14 @@ class TaskDispatchResponse(BaseModel):
 
 class TaskCancelRequest(BaseModel):
     """Request to cancel a task."""
+
     task_id: str = Field(..., description="Celery task ID to cancel")
     terminate: bool = Field(False, description="Whether to forcefully terminate the task")
 
 
 class TaskCancelResponse(BaseModel):
     """Response after canceling a task."""
+
     task_id: str = Field(..., description="Celery task ID")
     status: str = Field(..., description="Task status after cancel")
     message: str = Field(..., description="Human-readable message")
@@ -169,12 +185,14 @@ class TaskCancelResponse(BaseModel):
 
 class TaskRetryRequest(BaseModel):
     """Request to retry a failed task."""
+
     task_id: str = Field(..., description="Celery task ID to retry")
     countdown: Optional[int] = Field(None, description="Delay in seconds before retry")
 
 
 class TaskRetryResponse(BaseModel):
     """Response after retrying a task."""
+
     new_task_id: str = Field(..., description="New Celery task ID")
     original_task_id: str = Field(..., description="Original task ID")
     status: str = Field(..., description="New task status")

@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class InteractionType(Enum):
     """Types of user interactions with products."""
+
     VIEW = "view"
     LIKE = "like"
     DISLIKE = "dislike"
@@ -39,6 +40,7 @@ class InteractionEvent:
 
     Represents a single user interaction with a product.
     """
+
     user_id: int
     product_id: int
     interaction_type: InteractionType
@@ -53,14 +55,14 @@ class InteractionEvent:
     def to_dict(self) -> dict:
         """Convert to dictionary for logging."""
         return {
-            'user_id': self.user_id,
-            'product_id': self.product_id,
-            'interaction_type': self.interaction_type.value,
-            'timestamp': self.timestamp.isoformat(),
-            'session_id': self.session_id,
-            'search_query': self.search_query,
-            'context': self.context,
-            'metadata': self.metadata,
+            "user_id": self.user_id,
+            "product_id": self.product_id,
+            "interaction_type": self.interaction_type.value,
+            "timestamp": self.timestamp.isoformat(),
+            "session_id": self.session_id,
+            "search_query": self.search_query,
+            "context": self.context,
+            "metadata": self.metadata,
         }
 
 
@@ -74,11 +76,7 @@ class FeedbackHandler:
     - Neutral: view, click
     """
 
-    def __init__(
-        self,
-        config: Optional[MLConfig] = None,
-        db_session_factory=None
-    ):
+    def __init__(self, config: Optional[MLConfig] = None, db_session_factory=None):
         """
         Initialize feedback handler.
 
@@ -116,7 +114,7 @@ class FeedbackHandler:
         product_embedding: Optional[np.ndarray] = None,
         update_long_term: bool = True,
         update_session: bool = True,
-        persist_to_db: bool = True
+        persist_to_db: bool = True,
     ) -> Dict[str, Any]:
         """
         Process a single interaction event.
@@ -137,11 +135,11 @@ class FeedbackHandler:
         )
 
         result = {
-            'event': event.to_dict(),
-            'long_term_updated': False,
-            'session_updated': False,
-            'cache_updated': False,
-            'db_persisted': False,
+            "event": event.to_dict(),
+            "long_term_updated": False,
+            "session_updated": False,
+            "cache_updated": False,
+            "db_persisted": False,
         }
 
         # Get product embedding if not provided
@@ -150,7 +148,7 @@ class FeedbackHandler:
 
         if product_embedding is None:
             logger.warning(f"No embedding found for product {event.product_id}")
-            result['error'] = 'product_embedding_not_found'
+            result["error"] = "product_embedding_not_found"
             return result
 
         # Get interaction weight
@@ -159,26 +157,24 @@ class FeedbackHandler:
         # Update long-term embedding
         if update_long_term and weight != 0:
             new_long_term = self._update_long_term_embedding(
-                user_id=event.user_id,
-                product_embedding=product_embedding,
-                weight=weight
+                user_id=event.user_id, product_embedding=product_embedding, weight=weight
             )
 
             if new_long_term is not None:
-                result['long_term_updated'] = True
-                result['new_long_term_embedding'] = new_long_term
+                result["long_term_updated"] = True
+                result["new_long_term_embedding"] = new_long_term
 
         # Update session embedding
         if update_session:
             new_session = self._update_session_embedding(
                 user_id=event.user_id,
                 product_embedding=product_embedding,
-                interaction_type=event.interaction_type
+                interaction_type=event.interaction_type,
             )
 
             if new_session is not None:
-                result['session_updated'] = True
-                result['new_session_embedding'] = new_session
+                result["session_updated"] = True
+                result["new_session_embedding"] = new_session
 
         # Track hot products
         if event.interaction_type in [InteractionType.VIEW, InteractionType.CLICK]:
@@ -187,7 +183,7 @@ class FeedbackHandler:
         # Persist to database
         if persist_to_db and self.db_session_factory:
             persisted = self._persist_event(event)
-            result['db_persisted'] = persisted
+            result["db_persisted"] = persisted
 
         # Log event for analytics
         self._log_event(event)
@@ -195,10 +191,7 @@ class FeedbackHandler:
         return result
 
     def process_thumbs_up(
-        self,
-        user_id: int,
-        product_id: int,
-        context: Optional[str] = None
+        self, user_id: int, product_id: int, context: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Process thumbs up feedback.
@@ -215,16 +208,13 @@ class FeedbackHandler:
             user_id=user_id,
             product_id=product_id,
             interaction_type=InteractionType.THUMBS_UP,
-            context=context
+            context=context,
         )
 
         return self.process_event(event)
 
     def process_thumbs_down(
-        self,
-        user_id: int,
-        product_id: int,
-        context: Optional[str] = None
+        self, user_id: int, product_id: int, context: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Process thumbs down feedback.
@@ -241,30 +231,21 @@ class FeedbackHandler:
             user_id=user_id,
             product_id=product_id,
             interaction_type=InteractionType.THUMBS_DOWN,
-            context=context
+            context=context,
         )
 
         return self.process_event(event)
 
-    def process_like(
-        self,
-        user_id: int,
-        product_id: int
-    ) -> Dict[str, Any]:
+    def process_like(self, user_id: int, product_id: int) -> Dict[str, Any]:
         """Process like event."""
         event = InteractionEvent(
-            user_id=user_id,
-            product_id=product_id,
-            interaction_type=InteractionType.LIKE
+            user_id=user_id, product_id=product_id, interaction_type=InteractionType.LIKE
         )
 
         return self.process_event(event)
 
     def process_purchase(
-        self,
-        user_id: int,
-        product_id: int,
-        metadata: Optional[Dict[str, Any]] = None
+        self, user_id: int, product_id: int, metadata: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Process purchase event.
@@ -281,16 +262,13 @@ class FeedbackHandler:
             user_id=user_id,
             product_id=product_id,
             interaction_type=InteractionType.PURCHASE,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         return self.process_event(event)
 
     def _update_long_term_embedding(
-        self,
-        user_id: int,
-        product_embedding: np.ndarray,
-        weight: float
+        self, user_id: int, product_embedding: np.ndarray, weight: float
     ) -> Optional[np.ndarray]:
         """
         Update user's long-term embedding.
@@ -315,7 +293,7 @@ class FeedbackHandler:
             new_embedding = self.warm_updater.update_embedding(
                 current_embedding=current_embedding,
                 interaction_embedding=product_embedding,
-                interaction_weight=abs(weight)  # Use absolute value for strength
+                interaction_weight=abs(weight),  # Use absolute value for strength
             )
 
             # If negative interaction, move away from the embedding
@@ -332,10 +310,7 @@ class FeedbackHandler:
         return new_embedding
 
     def _update_session_embedding(
-        self,
-        user_id: int,
-        product_embedding: np.ndarray,
-        interaction_type: InteractionType
+        self, user_id: int, product_embedding: np.ndarray, interaction_type: InteractionType
     ) -> Optional[np.ndarray]:
         """
         Update user's session embedding.
@@ -355,11 +330,10 @@ class FeedbackHandler:
             InteractionType.LIKE,
             InteractionType.THUMBS_UP,
             InteractionType.ADD_TO_CART,
-            InteractionType.PURCHASE
+            InteractionType.PURCHASE,
         ]:
             new_session = self.session_manager.add_interaction(
-                user_id=user_id,
-                product_embedding=product_embedding
+                user_id=user_id, product_embedding=product_embedding
             )
 
             # Cache the session embedding
@@ -450,9 +424,7 @@ class FeedbackProcessor:
     """
 
     def __init__(
-        self,
-        handler: Optional[FeedbackHandler] = None,
-        config: Optional[MLConfig] = None
+        self, handler: Optional[FeedbackHandler] = None, config: Optional[MLConfig] = None
     ):
         """
         Initialize feedback processor.
@@ -466,10 +438,7 @@ class FeedbackProcessor:
 
         logger.info("Feedback processor initialized")
 
-    def process_batch(
-        self,
-        events: List[InteractionEvent]
-    ) -> Dict[str, Any]:
+    def process_batch(self, events: List[InteractionEvent]) -> Dict[str, Any]:
         """
         Process a batch of interaction events.
 
@@ -480,7 +449,7 @@ class FeedbackProcessor:
             Dict with batch processing results
         """
         if not events:
-            return {'total': 0, 'processed': 0, 'errors': 0}
+            return {"total": 0, "processed": 0, "errors": 0}
 
         logger.info(f"Processing batch of {len(events)} events")
 
@@ -493,24 +462,17 @@ class FeedbackProcessor:
                 results.append(result)
             except Exception as e:
                 logger.error(f"Error processing event {event.to_dict()}: {e}")
-                errors.append({
-                    'event': event.to_dict(),
-                    'error': str(e)
-                })
+                errors.append({"event": event.to_dict(), "error": str(e)})
 
         return {
-            'total': len(events),
-            'processed': len(results),
-            'errors': len(errors),
-            'results': results,
-            'error_details': errors,
+            "total": len(events),
+            "processed": len(results),
+            "errors": len(errors),
+            "results": results,
+            "error_details": errors,
         }
 
-    def process_user_session(
-        self,
-        user_id: int,
-        interactions: List[tuple]
-    ) -> Dict[str, Any]:
+    def process_user_session(self, user_id: int, interactions: List[tuple]) -> Dict[str, Any]:
         """
         Process all interactions from a user session.
 
@@ -523,9 +485,7 @@ class FeedbackProcessor:
         """
         events = [
             InteractionEvent(
-                user_id=user_id,
-                product_id=product_id,
-                interaction_type=interaction_type
+                user_id=user_id, product_id=product_id, interaction_type=interaction_type
             )
             for product_id, interaction_type in interactions
         ]

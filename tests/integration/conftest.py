@@ -18,4 +18,3 @@ def test_api_client():
     """Create test API client."""
     # Create and return API test client
     pass
-

@@ -107,13 +107,13 @@ class TextEncoderService:
             Cleaned query text
         """
         # Remove extra whitespace
-        query = ' '.join(query.split())
+        query = " ".join(query.split())
 
         # Remove special characters (keep alphanumeric, spaces, and basic punctuation)
-        query = re.sub(r'[^\w\s\-\']', ' ', query)
+        query = re.sub(r"[^\w\s\-\']", " ", query)
 
         # Remove extra spaces again
-        query = ' '.join(query.split())
+        query = " ".join(query.split())
 
         # Lowercase for consistency
         query = query.lower()
@@ -122,7 +122,7 @@ class TextEncoderService:
         max_length = 77  # CLIP's max token length
         words = query.split()
         if len(words) > max_length:
-            query = ' '.join(words[:max_length])
+            query = " ".join(words[:max_length])
             logger.warning(f"Query truncated to {max_length} words")
 
         return query

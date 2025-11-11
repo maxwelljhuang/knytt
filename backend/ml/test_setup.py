@@ -46,20 +46,24 @@ def check_dependencies():
     # Check individual imports
     try:
         import torch
+
         print(f"✓ PyTorch {torch.__version__}")
 
         import open_clip
+
         print(f"✓ OpenCLIP installed")
 
         import PIL
+
         print(f"✓ Pillow {PIL.__version__}")
 
         import numpy
+
         print(f"✓ NumPy {numpy.__version__}")
 
         # Check device
         cuda_available = torch.cuda.is_available()
-        mps_available = hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()
+        mps_available = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
 
         if cuda_available:
             print(f"✓ CUDA available: {torch.cuda.get_device_name(0)}")
@@ -119,6 +123,7 @@ def test_model_loading():
     except Exception as e:
         print(f"❌ Model loading failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -149,18 +154,23 @@ def test_image_encoding():
         # Check shape
         config = get_ml_config()
         expected_dim = config.embedding.image_embedding_dim
-        assert embedding.shape == (expected_dim,), f"Expected shape ({expected_dim},), got {embedding.shape}"
+        assert embedding.shape == (
+            expected_dim,
+        ), f"Expected shape ({expected_dim},), got {embedding.shape}"
 
         # Check normalization
         if config.embedding.normalize_embeddings:
             norm = np.linalg.norm(embedding)
-            assert abs(norm - 1.0) < 0.01, f"Expected normalized embedding (norm=1.0), got {norm:.4f}"
+            assert (
+                abs(norm - 1.0) < 0.01
+            ), f"Expected normalized embedding (norm=1.0), got {norm:.4f}"
             print(f"✓ Embedding is normalized (norm ≈ 1.0)")
 
         return True
     except Exception as e:
         print(f"❌ Image encoding failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -171,11 +181,7 @@ def test_text_encoding():
 
     try:
         # Test queries
-        queries = [
-            "vintage floral dress",
-            "minimalist black shoes",
-            "bohemian style jacket"
-        ]
+        queries = ["vintage floral dress", "minimalist black shoes", "bohemian style jacket"]
 
         print(f"Testing {len(queries)} text queries...")
 
@@ -189,7 +195,9 @@ def test_text_encoding():
         # Check last embedding
         config = get_ml_config()
         expected_dim = config.embedding.text_embedding_dim
-        assert embedding.shape == (expected_dim,), f"Expected shape ({expected_dim},), got {embedding.shape}"
+        assert embedding.shape == (
+            expected_dim,
+        ), f"Expected shape ({expected_dim},), got {embedding.shape}"
 
         print(f"✓ All text queries encoded successfully")
         print(f"  - Embedding shape: {embedding.shape}")
@@ -199,6 +207,7 @@ def test_text_encoding():
     except Exception as e:
         print(f"❌ Text encoding failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -209,13 +218,7 @@ def test_batch_encoding():
 
     try:
         # Test batch text encoding
-        texts = [
-            "red dress",
-            "blue shirt",
-            "green pants",
-            "yellow jacket",
-            "purple shoes"
-        ]
+        texts = ["red dress", "blue shirt", "green pants", "yellow jacket", "purple shoes"]
 
         start_time = time.time()
         embeddings = model_registry.encode_text_batch(texts)
@@ -238,6 +241,7 @@ def test_batch_encoding():
     except Exception as e:
         print(f"❌ Batch encoding failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

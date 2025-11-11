@@ -10,6 +10,7 @@ import time
 
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class FilteredSimilaritySearchError(Exception):
     """Exception raised for filtered search errors."""
+
     pass
 
 
@@ -45,7 +47,7 @@ class FilteredSimilaritySearch:
         self,
         config: Optional[MLConfig] = None,
         index_manager: Optional[FAISSIndexManager] = None,
-        db_session_factory=None
+        db_session_factory=None,
     ):
         """
         Initialize filtered similarity search.
@@ -58,8 +60,7 @@ class FilteredSimilaritySearch:
         self.config = config or get_ml_config()
         self.index_manager = index_manager or get_index_manager()
         self.similarity_search = SimilaritySearch(
-            config=self.config,
-            index_manager=self.index_manager
+            config=self.config, index_manager=self.index_manager
         )
         self.filtered_searcher = FilteredSearcher(db_session_factory)
         self.db_session_factory = db_session_factory
@@ -77,7 +78,7 @@ class FilteredSimilaritySearch:
         k: int = 50,
         min_similarity: Optional[float] = None,
         strategy: Optional[str] = None,
-        session=None
+        session=None,
     ) -> SearchResults:
         """
         Search with filters applied.
@@ -114,8 +115,7 @@ class FilteredSimilaritySearch:
 
             # Get filtered product IDs from database
             filtered_product_ids = self.filtered_searcher.get_filtered_product_ids(
-                session=session,
-                filters=filters
+                session=session, filters=filters
             )
 
             if len(filtered_product_ids) == 0:
@@ -125,16 +125,16 @@ class FilteredSimilaritySearch:
                     query_vector_shape=query_vector.shape,
                     k=k,
                     total_found=0,
-                    search_time_ms=(time.time() - start_time) * 1000
+                    search_time_ms=(time.time() - start_time) * 1000,
                 )
 
             # Decide on strategy
             filter_ratio = len(filtered_product_ids) / total_products
             use_subset = filter_ratio < self.subset_threshold_ratio
 
-            if strategy == 'subset':
+            if strategy == "subset":
                 use_subset = True
-            elif strategy == 'postfilter':
+            elif strategy == "postfilter":
                 use_subset = False
 
             logger.info(
@@ -151,14 +151,14 @@ class FilteredSimilaritySearch:
                     filters=filters,
                     k=k,
                     min_similarity=min_similarity,
-                    session=session
+                    session=session,
                 )
             else:
                 results = self._search_postfilter_strategy(
                     query_vector=query_vector,
                     filtered_product_ids=set(filtered_product_ids),
                     k=k,
-                    min_similarity=min_similarity
+                    min_similarity=min_similarity,
                 )
 
             # Update search time
@@ -177,7 +177,7 @@ class FilteredSimilaritySearch:
         filters: ProductFilters,
         k: int,
         min_similarity: Optional[float],
-        session
+        session,
     ) -> SearchResults:
         """
         Search using subset index strategy.
@@ -188,8 +188,7 @@ class FilteredSimilaritySearch:
 
         # Get embeddings for filtered products
         embeddings, product_ids = self.filtered_searcher.get_filtered_embeddings(
-            session=session,
-            filters=filters
+            session=session, filters=filters
         )
 
         if len(embeddings) == 0:
@@ -198,13 +197,12 @@ class FilteredSimilaritySearch:
                 query_vector_shape=query_vector.shape,
                 k=k,
                 total_found=0,
-                search_time_ms=0.0
+                search_time_ms=0.0,
             )
 
         # Build temporary index
         subset_index, id_mapping = self.filtered_searcher.build_subset_index(
-            embeddings=embeddings,
-            product_ids=product_ids
+            embeddings=embeddings, product_ids=product_ids
         )
 
         # Prepare query vector
@@ -238,19 +236,21 @@ class FilteredSimilaritySearch:
             if min_similarity is not None and similarity < min_similarity:
                 continue
 
-            results.append(SearchResult(
-                product_id=product_id,
-                distance=float(distance),
-                similarity=similarity,
-                rank=rank
-            ))
+            results.append(
+                SearchResult(
+                    product_id=product_id,
+                    distance=float(distance),
+                    similarity=similarity,
+                    rank=rank,
+                )
+            )
 
         return SearchResults(
             results=results,
             query_vector_shape=query_vector.shape,
             k=k,
             total_found=len(results),
-            search_time_ms=0.0  # Will be updated by caller
+            search_time_ms=0.0,  # Will be updated by caller
         )
 
     def _search_postfilter_strategy(
@@ -258,7 +258,7 @@ class FilteredSimilaritySearch:
         query_vector: np.ndarray,
         filtered_product_ids: Set[int],
         k: int,
-        min_similarity: Optional[float]
+        min_similarity: Optional[float],
     ) -> SearchResults:
         """
         Search using post-filter strategy.
@@ -273,16 +273,13 @@ class FilteredSimilaritySearch:
 
         # Perform search on full index
         results = self.similarity_search.search(
-            query_vector=query_vector,
-            k=search_k,
-            min_similarity=min_similarity
+            query_vector=query_vector, k=search_k, min_similarity=min_similarity
         )
 
         # Filter results to only allowed product IDs
-        filtered_results = [
-            r for r in results.results
-            if r.product_id in filtered_product_ids
-        ][:k]  # Take top k after filtering
+        filtered_results = [r for r in results.results if r.product_id in filtered_product_ids][
+            :k
+        ]  # Take top k after filtering
 
         # Re-rank results
         for i, result in enumerate(filtered_results):
@@ -293,7 +290,7 @@ class FilteredSimilaritySearch:
             query_vector_shape=query_vector.shape,
             k=k,
             total_found=len(filtered_results),
-            search_time_ms=0.0  # Will be updated by caller
+            search_time_ms=0.0,  # Will be updated by caller
         )
 
     def search_similar_with_filters(
@@ -303,7 +300,7 @@ class FilteredSimilaritySearch:
         k: int = 50,
         exclude_self: bool = True,
         min_similarity: Optional[float] = None,
-        session=None
+        session=None,
     ) -> SearchResults:
         """
         Find similar products with filters applied.
@@ -323,9 +320,7 @@ class FilteredSimilaritySearch:
         vector = self.similarity_search.get_product_vector(product_id)
 
         if vector is None:
-            raise FilteredSimilaritySearchError(
-                f"Product ID {product_id} not found in index"
-            )
+            raise FilteredSimilaritySearchError(f"Product ID {product_id} not found in index")
 
         # Search with filters
         results = self.search_with_filters(
@@ -333,15 +328,12 @@ class FilteredSimilaritySearch:
             filters=filters,
             k=k + 1 if exclude_self else k,
             min_similarity=min_similarity,
-            session=session
+            session=session,
         )
 
         # Filter out self if needed
         if exclude_self:
-            results.results = [
-                r for r in results.results
-                if r.product_id != product_id
-            ][:k]
+            results.results = [r for r in results.results if r.product_id != product_id][:k]
             results.total_found = len(results.results)
 
             # Re-rank
