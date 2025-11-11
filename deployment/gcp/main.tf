@@ -57,6 +57,12 @@ variable "supabase_anon_key" {
   sensitive   = true
 }
 
+variable "database_url" {
+  description = "PostgreSQL Database URL"
+  type        = string
+  sensitive   = true
+}
+
 variable "api_image" {
   description = "Docker image for FastAPI service"
   type        = string
@@ -195,6 +201,19 @@ resource "google_secret_manager_secret_version" "redis_auth" {
   secret_data = google_redis_instance.cache.auth_string
 }
 
+resource "google_secret_manager_secret" "database_url" {
+  secret_id = "database-url-${var.environment}"
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "database_url" {
+  secret = google_secret_manager_secret.database_url.id
+  secret_data = var.database_url
+}
+
 # =====================================================
 # SERVICE ACCOUNT (for Cloud Run services)
 # =====================================================
@@ -211,6 +230,7 @@ resource "google_secret_manager_secret_iam_member" "cloud_run_secrets" {
     "supabase-url"         = google_secret_manager_secret.supabase_url.id,
     "supabase-service-key" = google_secret_manager_secret.supabase_service_key.id,
     "redis-auth"           = google_secret_manager_secret.redis_auth.id,
+    "database-url"         = google_secret_manager_secret.database_url.id,
   })
 
   secret_id = each.value
@@ -338,6 +358,16 @@ resource "google_cloud_run_v2_service" "api" {
       env {
         name  = "GCS_BUCKET"
         value = google_storage_bucket.ml_artifacts.name
+      }
+
+      env {
+        name = "DATABASE_URL"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.database_url.secret_id
+            version = "latest"
+          }
+        }
       }
 
       startup_probe {
@@ -471,6 +501,16 @@ resource "google_cloud_run_v2_service" "worker" {
       env {
         name  = "GCS_BUCKET"
         value = google_storage_bucket.ml_artifacts.name
+      }
+
+      env {
+        name = "DATABASE_URL"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.database_url.secret_id
+            version = "latest"
+          }
+        }
       }
     }
   }

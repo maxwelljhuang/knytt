@@ -192,6 +192,7 @@ jobs:
             -var="supabase_url=${{ secrets.SUPABASE_URL }}" \
             -var="supabase_service_key=${{ secrets.SUPABASE_SERVICE_KEY }}" \
             -var="supabase_anon_key=${{ secrets.SUPABASE_ANON_KEY }}" \
+            -var="database_url=${{ secrets.DATABASE_URL }}" \
             -var="api_image=${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/knytt-${{ needs.setup.outputs.environment }}/knytt-api:latest" \
             -var="worker_image=${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/knytt-${{ needs.setup.outputs.environment }}/knytt-worker:latest" \
             -out=tfplan
