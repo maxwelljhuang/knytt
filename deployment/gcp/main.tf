@@ -87,6 +87,12 @@ variable "redis_port" {
   default     = "6379"
 }
 
+variable "hf_token" {
+  description = "Hugging Face API token for downloading models"
+  type        = string
+  sensitive   = true
+}
+
 # =====================================================
 # PROVIDER CONFIGURATION
 # =====================================================
@@ -214,6 +220,19 @@ resource "google_secret_manager_secret_version" "database_url" {
   secret_data = var.database_url
 }
 
+resource "google_secret_manager_secret" "hf_token" {
+  secret_id = "hf-token-${var.environment}"
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "hf_token" {
+  secret = google_secret_manager_secret.hf_token.id
+  secret_data = var.hf_token
+}
+
 # =====================================================
 # SERVICE ACCOUNT (for Cloud Run services)
 # =====================================================
@@ -231,6 +250,7 @@ resource "google_secret_manager_secret_iam_member" "cloud_run_secrets" {
     "supabase-service-key" = google_secret_manager_secret.supabase_service_key.id,
     "redis-auth"           = google_secret_manager_secret.redis_auth.id,
     "database-url"         = google_secret_manager_secret.database_url.id,
+    "hf-token"             = google_secret_manager_secret.hf_token.id,
   })
 
   secret_id = each.value
@@ -365,6 +385,16 @@ resource "google_cloud_run_v2_service" "api" {
         value_source {
           secret_key_ref {
             secret  = google_secret_manager_secret.database_url.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "HF_TOKEN"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.hf_token.secret_id
             version = "latest"
           }
         }
@@ -508,6 +538,16 @@ resource "google_cloud_run_v2_service" "worker" {
         value_source {
           secret_key_ref {
             secret  = google_secret_manager_secret.database_url.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "HF_TOKEN"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.hf_token.secret_id
             version = "latest"
           }
         }
