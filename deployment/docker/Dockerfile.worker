@@ -73,17 +73,17 @@ FROM base as production
 COPY --from=dependencies /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=dependencies /usr/local/bin /usr/local/bin
 
-# Copy pre-downloaded models from model-download stage
+# Copy application code first
+COPY backend/ /app/backend/
+COPY models/ /app/models/
+COPY workers/ /app/workers/
+
+# Copy pre-downloaded models from model-download stage (overwrites empty cache)
 COPY --from=model-download /app/models/cache /app/models/cache
 
-# Create non-root user
+# Create non-root user and set ownership
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
-
-# Copy application code
-COPY --chown=appuser:appuser backend/ /app/backend/
-COPY --chown=appuser:appuser models/ /app/models/
-COPY --chown=appuser:appuser workers/ /app/workers/
 
 # Switch to non-root user
 USER appuser
