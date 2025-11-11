@@ -50,6 +50,7 @@ resource "google_cloud_run_v2_service" "backend" {
           CLIP_MODEL            = "clip-model"
           EMBEDDING_DIMENSION   = "embedding-dimension"
           ENVIRONMENT           = "environment"
+          HF_TOKEN              = "hf-token"
         }
 
         content {

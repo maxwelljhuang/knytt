@@ -99,3 +99,9 @@ variable "environment" {
   type        = string
   default     = "production"
 }
+
+variable "hf_token" {
+  description = "Hugging Face API token for downloading models"
+  type        = string
+  sensitive   = true
+}

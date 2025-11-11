@@ -48,6 +48,10 @@ locals {
       value       = var.environment
       description = "Environment name"
     }
+    hf-token = {
+      value       = var.hf_token
+      description = "Hugging Face API token for model downloads"
+    }
   }
 }
 
