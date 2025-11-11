@@ -12,13 +12,22 @@ from fastapi.middleware.gzip import GZipMiddleware
 from .config import get_settings
 from .errors import setup_error_handlers
 from .middleware import RequestLoggingMiddleware, RequestTimingMiddleware
-from .routers import health_router, search_router, recommend_router, feedback_router, admin_router, auth_router, users_router, onboarding_router
+from .routers import (
+    health_router,
+    search_router,
+    recommend_router,
+    feedback_router,
+    admin_router,
+    auth_router,
+    users_router,
+    onboarding_router,
+)
 from ..ml.retrieval import get_index_manager
+from ..db.session import SessionLocal
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -38,7 +47,7 @@ async def lifespan(app: FastAPI):
     # Load FAISS index on startup
     try:
         logger.info("Loading FAISS index...")
-        index_manager = get_index_manager()
+        index_manager = get_index_manager(db_session_factory=SessionLocal)
         index_manager.ensure_index_loaded()
 
         stats = index_manager.get_stats()
@@ -75,7 +84,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",
-        openapi_url="/openapi.json"
+        openapi_url="/openapi.json",
     )
 
     # Set up CORS
@@ -134,8 +143,8 @@ async def root():
             "status": "/status",
             "metrics": "/metrics",
             "docs": "/docs",
-            "redoc": "/redoc"
-        }
+            "redoc": "/redoc",
+        },
     }
 
 
@@ -149,5 +158,5 @@ if __name__ == "__main__":
         host=settings.host,
         port=settings.port,
         reload=settings.reload,
-        log_level=settings.log_level.lower()
+        log_level=settings.log_level.lower(),
     )
