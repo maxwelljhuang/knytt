@@ -135,6 +135,17 @@ async def search(
     # For now, use the query embedding directly
     from ...ml.retrieval import SimilaritySearch, FilteredSimilaritySearch
 
+    # Ensure FAISS index is loaded (lazy loading on first search request)
+    index_manager = search_service.personalized_search.index_manager
+    try:
+        index_manager.ensure_index_loaded(session=db)
+    except Exception as e:
+        logger.error(f"Failed to load FAISS index: {e}")
+        raise SearchError(
+            message="Search service temporarily unavailable",
+            details={"error": str(e)},
+        )
+
     if filters:
         filtered_search = FilteredSimilaritySearch(
             index_manager=search_service.personalized_search.index_manager,
