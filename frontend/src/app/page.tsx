@@ -2,7 +2,7 @@
 
 import { HeroSection, CategoryPills, MasonryGrid } from "@/components/home";
 import { RecommendationCarousel } from "@/components/recommendations/RecommendationCarousel";
-import { useSearch } from "@/lib/queries/search";
+import { useDiscover } from "@/lib/queries/discover";
 import { useFeed } from "@/lib/queries/recommendations";
 import { useAuth } from "@/lib/queries/auth";
 import { Loader2, Sparkles } from "lucide-react";
@@ -15,15 +15,14 @@ export default function HomePage() {
   // Fetch personalized recommendations for authenticated users
   const { data: recommendedData, isLoading: recommendationsLoading } = useFeed(userId);
 
-  // Fetch featured products using a general query
-  // Note: Backend requires non-empty query, so we use a broad search term
-  const { data, isLoading } = useSearch(
+  // Fetch featured products using discover endpoint (no ML dependencies)
+  const { data, isLoading } = useDiscover(
     {
-      query: "fashion", // Broad query to get diverse results
+      sort_by: "popular",
       limit: 40,
     },
     {
-      enabled: true, // Always fetch
+      enabled: true,
     }
   );
 
