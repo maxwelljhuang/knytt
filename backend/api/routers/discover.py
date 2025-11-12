@@ -63,9 +63,9 @@ async def discover_products(
 
         # Sorting
         if sort_by == "popular":
-            query = query.order_by(desc("interaction_count"), desc(Product.created_at))
+            query = query.order_by(desc("interaction_count"), desc(Product.ingested_at))
         elif sort_by == "recent":
-            query = query.order_by(desc(Product.created_at))
+            query = query.order_by(desc(Product.ingested_at))
         elif sort_by == "price_low":
             query = query.order_by(Product.search_price.asc())
         elif sort_by == "price_high":
