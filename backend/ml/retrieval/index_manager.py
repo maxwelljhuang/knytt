@@ -107,14 +107,13 @@ class FAISSIndexManager:
             FAISSIndexManagerError: If loading fails
         """
         try:
-            # Query product embeddings
+            # Query product embeddings from products table
             query = text(
                 """
-                SELECT product_id, embedding
-                FROM product_embeddings
-                WHERE embedding_type = 'text'
-                  AND embedding IS NOT NULL
-                ORDER BY product_id
+                SELECT id, embedding
+                FROM products
+                WHERE embedding IS NOT NULL
+                ORDER BY id
             """
             )
 
