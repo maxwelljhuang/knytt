@@ -44,30 +44,9 @@ async def lifespan(app: FastAPI):
 
     settings = get_settings()
 
-    # Load FAISS index in background (non-blocking)
-    # This allows the app to start quickly and pass health checks
-    import threading
-
-    def load_index_background():
-        try:
-            logger.info("Loading FAISS index in background...")
-            index_manager = get_index_manager(db_session_factory=SessionLocal)
-            index_manager.ensure_index_loaded()
-
-            stats = index_manager.get_stats()
-            logger.info(
-                f"FAISS index loaded successfully: {stats.get('num_vectors', 0)} vectors, "
-                f"type={stats.get('index_type', 'unknown')}"
-            )
-        except Exception as e:
-            logger.error(f"Failed to load FAISS index: {e}")
-            logger.warning("Search functionality may be limited until index is loaded")
-
-    # Start index loading in background thread
-    index_thread = threading.Thread(target=load_index_background, daemon=True)
-    index_thread.start()
-
-    logger.info("GreenThumb ML API started successfully (FAISS index loading in background)")
+    # FAISS index will be loaded lazily on first search request
+    # This prevents memory issues during startup and allows the app to start quickly
+    logger.info("GreenThumb ML API started successfully (FAISS index will load on-demand)")
 
     yield
 
