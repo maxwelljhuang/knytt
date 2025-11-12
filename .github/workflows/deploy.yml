@@ -1,4 +1,4 @@
-name: Deploy Knytt to GCP + Cloudflare
+name: Deploy Knytt to GCP
 
 on:
   push:
