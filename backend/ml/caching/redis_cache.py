@@ -68,7 +68,6 @@ class RedisCache:
         self.pool = ConnectionPool(
             host=self.config.storage.redis_host,
             port=self.config.storage.redis_port,
-            password=self.config.storage.redis_password,
             db=self.config.storage.redis_db,
             decode_responses=False,  # We'll handle binary data (pickled embeddings)
             max_connections=20,

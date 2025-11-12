@@ -167,7 +167,6 @@ class StorageConfig:
     # Redis configuration for user embeddings
     redis_host: str = field(default_factory=lambda: os.getenv("REDIS_HOST", "redis"))
     redis_port: int = field(default_factory=lambda: int(os.getenv("REDIS_PORT", "6379")))
-    redis_password: Optional[str] = field(default_factory=lambda: os.getenv("REDIS_PASSWORD"))
     redis_db: int = 1  # Separate DB for embeddings
     redis_ttl_hours: int = 24  # Cache user embeddings for 24 hours
 
