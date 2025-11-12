@@ -18,6 +18,7 @@ from .middleware import RequestLoggingMiddleware, RequestTimingMiddleware
 from .routers import (
     admin_router,
     auth_router,
+    discover_router,
     feedback_router,
     health_router,
     onboarding_router,
@@ -99,6 +100,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)  # Auth router (for /api/v1/auth endpoints)
     app.include_router(users_router)  # User endpoints (favorites, history, stats)
     app.include_router(onboarding_router)  # Onboarding flow
+    app.include_router(discover_router)  # Simple product discovery (no ML required)
     app.include_router(search_router)
     app.include_router(recommend_router)
     app.include_router(feedback_router)
