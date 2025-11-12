@@ -3,6 +3,7 @@ Authentication routes.
 Handles user registration, login, logout, and profile management.
 """
 
+import os
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID
@@ -31,6 +32,23 @@ from ..security import (
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+# Helper function to get cookie settings based on environment
+def get_cookie_settings() -> dict:
+    """
+    Get cookie settings based on environment.
+
+    In production (HTTPS), use secure=True and samesite="none" for cross-origin requests.
+    In development, use secure=False and samesite="lax" for localhost.
+    """
+    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+
+    return {
+        "httponly": True,
+        "secure": is_production,  # True in production (HTTPS required)
+        "samesite": "none" if is_production else "lax",  # "none" allows cross-origin in production
+    }
 
 
 @router.post(
@@ -78,22 +96,19 @@ async def register(
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
-    # Set httpOnly cookies
+    # Set httpOnly cookies with environment-appropriate settings
+    cookie_settings = get_cookie_settings()
     response.set_cookie(
         key="access_token",
         value=access_token,
-        httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        **cookie_settings,
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
-        httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax",
         max_age=7 * 24 * 60 * 60,  # 7 days
+        **cookie_settings,
     )
 
     # Update last login
@@ -159,22 +174,19 @@ async def login(
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
-    # Set httpOnly cookies
+    # Set httpOnly cookies with environment-appropriate settings
+    cookie_settings = get_cookie_settings()
     response.set_cookie(
         key="access_token",
         value=access_token,
-        httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        **cookie_settings,
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
-        httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax",
         max_age=7 * 24 * 60 * 60,  # 7 days
+        **cookie_settings,
     )
 
     return TokenResponse(
@@ -322,14 +334,13 @@ async def refresh_access_token(
     token_data = {"sub": str(user.id), "email": user.email}
     new_access_token = create_access_token(token_data)
 
-    # Set new access token cookie
+    # Set new access token cookie with environment-appropriate settings
+    cookie_settings = get_cookie_settings()
     response.set_cookie(
         key="access_token",
         value=new_access_token,
-        httponly=True,
-        secure=False,  # Set to True in production
-        samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        **cookie_settings,
     )
 
     return TokenResponse(
