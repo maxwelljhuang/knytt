@@ -604,7 +604,7 @@ async def rebuild_faiss_index_sync(
         logger.info("Fetching product embeddings from database...")
 
         if embedding_type == "text":
-            # Use denormalized column on Product table for performance
+            # First try denormalized column on Product table for performance
             result = db.execute(sql_text("""
                 SELECT id, text_embedding
                 FROM products
@@ -628,6 +628,29 @@ async def rebuild_faiss_index_sync(
 
                     embeddings_list.append(emb)
                     product_ids.append(product_id)
+
+            # If no embeddings found in denormalized column, fallback to product_embeddings table
+            if len(embeddings_list) == 0:
+                logger.info("No embeddings in denormalized column, falling back to product_embeddings table")
+                result = db.execute(sql_text("""
+                    SELECT product_id, embedding
+                    FROM product_embeddings
+                    WHERE embedding_type = 'text'
+                    ORDER BY product_id
+                """))
+
+                for row in result:
+                    product_id = str(row.product_id)
+                    embedding_data = row.embedding
+
+                    if embedding_data is not None:
+                        if isinstance(embedding_data, (list, tuple)):
+                            emb = np.array(embedding_data, dtype=np.float32)
+                        else:
+                            emb = np.array(embedding_data, dtype=np.float32)
+
+                        embeddings_list.append(emb)
+                        product_ids.append(product_id)
         else:
             # For other types, use ProductEmbedding table
             result = db.execute(sql_text("""
