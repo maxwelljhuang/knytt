@@ -126,21 +126,9 @@ class UserEmbedding(Base):
 
     __tablename__ = "user_embeddings"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()"))
+    # Primary key is user_id (one embedding record per user)
     user_id = Column(
-        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
-
-    # Embedding type (for backward compatibility, though we now have dedicated columns)
-    embedding_type = Column(
-        String(50), nullable=False, index=True, comment="Type: long_term, session, cold_start, etc."
-    )
-
-    # Legacy embedding column (ARRAY format for backward compatibility)
-    embedding = Column(
-        ARRAY(Float, dimensions=1),
-        nullable=True,
-        comment="Legacy embedding array (deprecated, use specific columns)",
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, nullable=False
     )
 
     # pgvector embeddings (512-dimensional for CLIP ViT-B-32)
@@ -149,40 +137,36 @@ class UserEmbedding(Base):
         nullable=True,
         comment="Long-term user taste profile (EWMA of interactions)",
     )
+    long_term_weight = Column(Float, nullable=True, server_default=text("0.0"))
+    long_term_updated_at = Column(TIMESTAMP, nullable=True)
+
     session_embedding = Column(
         Vector(512) if PGVECTOR_AVAILABLE else ARRAY(Float),
         nullable=True,
         comment="Current session intent (rolling average)",
     )
+    session_weight = Column(Float, nullable=True, server_default=text("0.0"))
+    session_started_at = Column(TIMESTAMP, nullable=True)
+    session_updated_at = Column(TIMESTAMP, nullable=True)
 
     # Metadata
-    created_at = Column(TIMESTAMP, nullable=False, server_default=func.now())
-    updated_at = Column(TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now())
-    last_interaction_at = Column(
-        TIMESTAMP, nullable=True, comment="Timestamp of last user interaction"
-    )
-
-    # Stats
-    interaction_count = Column(
+    total_interactions = Column(
         Integer,
         nullable=False,
-        server_default="0",
+        server_default=text("0"),
         comment="Number of interactions used to build this embedding",
     )
-    confidence_score = Column(
-        Float, nullable=False, server_default="0.5", comment="Confidence in embedding quality (0-1)"
-    )
+    last_active_at = Column(TIMESTAMP, nullable=True, server_default=func.now())
+
+    # Timestamps
+    created_at = Column(TIMESTAMP, nullable=False, server_default=func.now())
+    updated_at = Column(TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     user = relationship("User", back_populates="embeddings")
 
-    # Unique constraint: one embedding per user per type
-    __table_args__ = (
-        Index("idx_user_embeddings_user_type", "user_id", "embedding_type", unique=True),
-    )
-
     def __repr__(self):
-        return f"<UserEmbedding(id={self.id}, user_id={self.user_id}, type={self.embedding_type})>"
+        return f"<UserEmbedding(user_id={self.user_id})>"
 
 
 class UserInteraction(Base):

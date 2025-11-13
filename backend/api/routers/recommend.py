@@ -8,7 +8,7 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ...ml.caching import EmbeddingCache
@@ -168,10 +168,9 @@ async def recommend(
     # Validate user has embeddings
     if not has_long_term_profile and not has_session_context:
         logger.warning(f"No embeddings found for user {request.user_id} in cache or database")
-        raise SearchError(
-            message="User has no preference profile. Please complete onboarding first.",
-            details={"user_id": request.user_id},
-            status_code=404,
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User has no preference profile. Please complete onboarding first.",
         )
 
     # Step 2: Build query vector based on context
