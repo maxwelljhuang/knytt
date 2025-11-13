@@ -53,6 +53,30 @@ def get_cookie_settings() -> dict:
     }
 
 
+def build_cookie_header(key: str, value: str, max_age: int, settings: dict) -> str:
+    """
+    Build a Set-Cookie header string with Partitioned attribute support.
+
+    The Partitioned attribute is required for Chrome's third-party cookie support
+    when using SameSite=None cookies in cross-origin contexts.
+
+    Reference: https://developers.google.com/privacy-sandbox/3pcd/chips
+    """
+    parts = [f"{key}={value}"]
+    parts.append(f"Max-Age={max_age}")
+    parts.append(f"Path={settings['path']}")
+    if settings.get('httponly'):
+        parts.append("HttpOnly")
+    if settings.get('secure'):
+        parts.append("Secure")
+    if settings.get('samesite'):
+        parts.append(f"SameSite={settings['samesite'].capitalize()}")
+    # Add Partitioned attribute for Chrome's third-party cookie support
+    if settings.get('secure') and settings.get('samesite') == 'none':
+        parts.append("Partitioned")
+    return "; ".join(parts)
+
+
 @router.post(
     "/register",
     response_model=TokenResponse,
@@ -98,20 +122,16 @@ async def register(
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
-    # Set httpOnly cookies with environment-appropriate settings
+    # Set httpOnly cookies with Partitioned attribute for cross-origin support
     cookie_settings = get_cookie_settings()
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        **cookie_settings,
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        max_age=7 * 24 * 60 * 60,  # 7 days
-        **cookie_settings,
-    )
+
+    # Set access_token cookie
+    access_cookie = build_cookie_header("access_token", access_token, ACCESS_TOKEN_EXPIRE_MINUTES * 60, cookie_settings)
+    response.headers.append("Set-Cookie", access_cookie)
+
+    # Set refresh_token cookie
+    refresh_cookie = build_cookie_header("refresh_token", refresh_token, 7 * 24 * 60 * 60, cookie_settings)
+    response.headers.append("Set-Cookie", refresh_cookie)
 
     # Update last login
     new_user.last_login = datetime.utcnow()
@@ -176,7 +196,7 @@ async def login(
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
-    # Set httpOnly cookies with environment-appropriate settings
+    # Set httpOnly cookies with Partitioned attribute for cross-origin support
     cookie_settings = get_cookie_settings()
 
     # Debug logging for cookie troubleshooting
@@ -184,18 +204,15 @@ async def login(
     logger = logging.getLogger(__name__)
     logger.info(f"POST /auth/login - Setting cookies with settings: {cookie_settings}")
 
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        **cookie_settings,
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        max_age=7 * 24 * 60 * 60,  # 7 days
-        **cookie_settings,
-    )
+    # Set access_token cookie with Partitioned attribute
+    access_cookie = build_cookie_header("access_token", access_token, ACCESS_TOKEN_EXPIRE_MINUTES * 60, cookie_settings)
+    response.headers.append("Set-Cookie", access_cookie)
+    logger.info(f"POST /auth/login - Set-Cookie header for access_token: {access_cookie}")
+
+    # Set refresh_token cookie with Partitioned attribute
+    refresh_cookie = build_cookie_header("refresh_token", refresh_token, 7 * 24 * 60 * 60, cookie_settings)
+    response.headers.append("Set-Cookie", refresh_cookie)
+    logger.info(f"POST /auth/login - Set-Cookie header for refresh_token: {refresh_cookie}")
 
     return TokenResponse(
         access_token=access_token,
@@ -352,14 +369,12 @@ async def refresh_access_token(
     token_data = {"sub": str(user.id), "email": user.email}
     new_access_token = create_access_token(token_data)
 
-    # Set new access token cookie with environment-appropriate settings
+    # Set new access token cookie with Partitioned attribute for cross-origin support
     cookie_settings = get_cookie_settings()
-    response.set_cookie(
-        key="access_token",
-        value=new_access_token,
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        **cookie_settings,
-    )
+
+    # Set access_token cookie
+    access_cookie = build_cookie_header("access_token", new_access_token, ACCESS_TOKEN_EXPIRE_MINUTES * 60, cookie_settings)
+    response.headers.append("Set-Cookie", access_cookie)
 
     return TokenResponse(
         access_token=new_access_token,
