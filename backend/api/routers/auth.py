@@ -178,6 +178,12 @@ async def login(
 
     # Set httpOnly cookies with environment-appropriate settings
     cookie_settings = get_cookie_settings()
+
+    # Debug logging for cookie troubleshooting
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"POST /auth/login - Setting cookies with settings: {cookie_settings}")
+
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -227,7 +233,16 @@ async def get_current_user(
 
     Requires valid access token in cookie.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Debug logging for cookie troubleshooting
+    logger.info(f"GET /auth/me - Cookie present: {access_token is not None}")
+    if access_token:
+        logger.info(f"GET /auth/me - Token length: {len(access_token)}")
+
     if not access_token:
+        logger.warning("GET /auth/me - No access_token cookie found")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
