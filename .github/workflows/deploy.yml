@@ -132,8 +132,12 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/knytt-${{ needs.setup.outputs.environment }}/knytt-api:${{ steps.vars.outputs.sha_short }}
             ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/knytt-${{ needs.setup.outputs.environment }}/knytt-api:latest
-          cache-from: type=gha
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/knytt-${{ needs.setup.outputs.environment }}/knytt-api:latest
           cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
       - name: Build and push Worker image
         uses: docker/build-push-action@v5
@@ -144,8 +148,12 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/knytt-${{ needs.setup.outputs.environment }}/knytt-worker:${{ steps.vars.outputs.sha_short }}
             ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/knytt-${{ needs.setup.outputs.environment }}/knytt-worker:latest
-          cache-from: type=gha
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/knytt-${{ needs.setup.outputs.environment }}/knytt-worker:latest
           cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
   # =====================================================
   # Deploy Infrastructure with Terraform

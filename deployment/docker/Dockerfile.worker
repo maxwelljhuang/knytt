@@ -1,12 +1,12 @@
 # Dockerfile for Knytt Celery Worker
 # Optimized for ML workloads with CLIP embeddings
+# syntax=docker/dockerfile:1.4
 
 FROM python:3.11-slim as base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     C_FORCE_ROOT=true
 
@@ -32,8 +32,10 @@ COPY requirements.txt .
 COPY requirements-ml.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r requirements-ml.txt
+# Use cache mount for pip to speed up installs
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt && \
+    pip install -r requirements-ml.txt
 
 # =====================================================
 # Production Stage
