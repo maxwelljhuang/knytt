@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useInView } from "react-intersection-observer";
 import { SearchBar } from "@/components/search";
 import { ProductGrid } from "@/components/products";
@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/queries/auth";
 
 export default function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const { user } = useAuth();
@@ -132,7 +133,7 @@ export default function SearchContent() {
               userId={userId}
               columns={4}
               onProductClick={(productId) => {
-                console.log("Product clicked:", productId);
+                router.push(`/products/${productId}`);
               }}
             />
 
