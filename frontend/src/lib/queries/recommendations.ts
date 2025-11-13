@@ -42,6 +42,14 @@ export function useFeed(
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on 404 (user hasn't completed onboarding)
+      if (error.message?.includes("no preference profile") || error.message?.includes("404")) {
+        return false;
+      }
+      // Retry up to 2 times for other errors
+      return failureCount < 2;
+    },
     ...options,
   });
 }
@@ -82,6 +90,14 @@ export function useSimilarProducts(
     },
     enabled: !!productId && !!userId,
     staleTime: 1000 * 60 * 10, // 10 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on 404 (user hasn't completed onboarding)
+      if (error.message?.includes("no preference profile") || error.message?.includes("404")) {
+        return false;
+      }
+      // Retry up to 2 times for other errors
+      return failureCount < 2;
+    },
     ...options,
   });
 }

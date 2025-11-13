@@ -13,7 +13,7 @@ export default function HomePage() {
   const userId = user?.id;
 
   // Fetch personalized recommendations for authenticated users
-  const { data: recommendedData, isLoading: recommendationsLoading } = useFeed(userId);
+  const { data: recommendedData, isLoading: recommendationsLoading, error: recommendationsError } = useFeed(userId);
 
   // Fetch featured products using discover endpoint (no ML dependencies)
   const { data, isLoading } = useDiscover(
@@ -35,7 +35,7 @@ export default function HomePage() {
       <CategoryPills />
 
       {/* Personalized Recommendations (Authenticated Users Only) */}
-      {isAuthenticated && (
+      {isAuthenticated && !recommendationsError && (
         <section className="py-8 bg-gradient-to-b from-white to-ivory">
           <div className="container mx-auto px-4">
             {recommendationsLoading ? (
