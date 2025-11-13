@@ -44,7 +44,7 @@ python-dateutil==2.8.2
 # Security
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
-bcrypt==4.1.1
+bcrypt==4.0.1  # Pin to 4.0.1 for compatibility with passlib 1.7.4
 
 # Monitoring
 sentry-sdk[fastapi]==1.38.0
