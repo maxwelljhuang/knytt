@@ -42,7 +42,8 @@ def get_cookie_settings() -> dict:
     In production (HTTPS), use secure=True and samesite="none" for cross-origin requests.
     In development, use secure=False and samesite="lax" for localhost.
     """
-    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+    env = os.getenv("ENVIRONMENT", "development").lower()
+    is_production = env in ("prod", "production", "staging")
 
     return {
         "httponly": True,
