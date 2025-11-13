@@ -596,14 +596,7 @@ resource "google_cloud_scheduler_job" "rebuild_faiss_index" {
 
   http_target {
     http_method = "POST"
-    uri         = "${google_cloud_run_v2_service.api.uri}/api/v1/admin/rebuild-index"
-    body        = base64encode(jsonencode({
-      embedding_type = "text"
-    }))
-
-    headers = {
-      "Content-Type" = "application/json"
-    }
+    uri         = "${google_cloud_run_v2_service.api.uri}/api/v1/admin/rebuild-index-sync?embedding_type=text"
 
     oidc_token {
       service_account_email = google_service_account.cloud_run_sa.email

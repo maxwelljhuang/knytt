@@ -573,3 +573,130 @@ async def generate_product_embeddings_sync(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate embeddings: {str(e)}"
         )
+
+
+@router.post("/rebuild-index-sync", status_code=status.HTTP_200_OK)
+async def rebuild_faiss_index_sync(
+    embedding_type: str = "text",
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Synchronously rebuild FAISS index from database embeddings (no Celery required).
+
+    This endpoint:
+    1. Fetches all product embeddings from database
+    2. Builds a new FAISS index
+    3. Saves index to disk and uploads to GCS
+    4. Returns when complete
+
+    Suitable for Cloud Scheduler or manual triggers.
+    """
+    try:
+        import numpy as np
+        from sqlalchemy import text as sql_text
+
+        logger.info(f"Starting synchronous FAISS index rebuild for {embedding_type} embeddings")
+
+        # Import FAISS builder
+        from ...ml.retrieval.index_builder import FAISSIndexBuilder
+
+        # Fetch all product embeddings from database
+        logger.info("Fetching product embeddings from database...")
+
+        if embedding_type == "text":
+            # Use denormalized column on Product table for performance
+            result = db.execute(sql_text("""
+                SELECT id, text_embedding
+                FROM products
+                WHERE text_embedding IS NOT NULL
+                ORDER BY id
+            """))
+
+            embeddings_list = []
+            product_ids = []
+
+            for row in result:
+                product_id = str(row.id)
+                text_embedding = row.text_embedding
+
+                if text_embedding is not None:
+                    # Handle both list and array formats
+                    if isinstance(text_embedding, (list, tuple)):
+                        emb = np.array(text_embedding, dtype=np.float32)
+                    else:
+                        emb = np.array(text_embedding, dtype=np.float32)
+
+                    embeddings_list.append(emb)
+                    product_ids.append(product_id)
+        else:
+            # For other types, use ProductEmbedding table
+            result = db.execute(sql_text("""
+                SELECT product_id, embedding
+                FROM product_embeddings
+                WHERE embedding_type = :embedding_type
+                ORDER BY product_id
+            """), {"embedding_type": embedding_type})
+
+            embeddings_list = []
+            product_ids = []
+
+            for row in result:
+                product_id = str(row.product_id)
+                embedding_data = row.embedding
+
+                if embedding_data is not None:
+                    if isinstance(embedding_data, (list, tuple)):
+                        emb = np.array(embedding_data, dtype=np.float32)
+                    else:
+                        emb = np.array(embedding_data, dtype=np.float32)
+
+                    embeddings_list.append(emb)
+                    product_ids.append(product_id)
+
+        if len(embeddings_list) == 0:
+            logger.error(f"No {embedding_type} embeddings found in database")
+            return {
+                "status": "error",
+                "error": f"No {embedding_type} embeddings found",
+                "embedding_type": embedding_type,
+            }
+
+        # Convert to numpy array
+        embeddings = np.vstack(embeddings_list)
+        logger.info(f"Fetched {len(embeddings)} embeddings from database")
+
+        # Build FAISS index
+        logger.info("Building FAISS index...")
+        builder = FAISSIndexBuilder()
+        index, id_mapping = builder.build_index(embeddings=embeddings, product_ids=product_ids)
+
+        # Save index to disk
+        logger.info("Saving FAISS index to disk...")
+        save_path = builder.save_index(index, id_mapping)
+
+        # Get index stats
+        stats = builder.get_index_stats(index)
+
+        logger.info(
+            f"FAISS index rebuilt successfully: "
+            f"{stats['num_vectors']} vectors, "
+            f"type={stats['index_type']}, "
+            f"saved to {save_path}"
+        )
+
+        return {
+            "status": "success",
+            "embedding_type": embedding_type,
+            "num_vectors": stats["num_vectors"],
+            "index_type": stats["index_type"],
+            "save_path": str(save_path),
+            "stats": stats,
+            "message": f"FAISS index rebuilt with {stats['num_vectors']} vectors"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to rebuild FAISS index: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to rebuild FAISS index: {str(e)}"
+        )
