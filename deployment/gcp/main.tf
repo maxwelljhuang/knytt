@@ -405,10 +405,10 @@ resource "google_cloud_run_v2_service" "api" {
           path = "/health"
           port = 8000
         }
-        initial_delay_seconds = 15
+        initial_delay_seconds = 20  # Allow time for CLIP model loading (~11s)
         timeout_seconds       = 5
         period_seconds        = 10
-        failure_threshold     = 6  # Allow up to 75s total for startup
+        failure_threshold     = 6  # Allow up to 80s total for startup
       }
 
       liveness_probe {

@@ -47,6 +47,16 @@ async def lifespan(app: FastAPI):
 
     settings = get_settings()
 
+    # Pre-load CLIP model to avoid cold start delays on first search
+    try:
+        from ..ml.model_loader import model_registry
+
+        logger.info("Pre-loading CLIP model for faster search performance...")
+        model_registry.get_clip_model()
+        logger.info("CLIP model pre-loaded successfully")
+    except Exception as e:
+        logger.warning(f"Failed to pre-load CLIP model (will load on-demand): {e}")
+
     # FAISS index will be loaded lazily on first search request
     # This prevents memory issues during startup and allows the app to start quickly
     logger.info("GreenThumb ML API started successfully (FAISS index will load on-demand)")
