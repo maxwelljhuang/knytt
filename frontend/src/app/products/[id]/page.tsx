@@ -17,9 +17,6 @@ import { useProduct } from "@/lib/queries/search";
 import { useAuth } from "@/lib/queries/auth";
 import type { ProductResult } from "@/types/api";
 
-// Required for Cloudflare Pages deployment
-export const runtime = "edge";
-
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
