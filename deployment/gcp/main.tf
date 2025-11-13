@@ -311,7 +311,7 @@ resource "google_cloud_run_v2_service" "api" {
       resources {
         limits = {
           cpu    = "2"
-          memory = "4Gi"
+          memory = "8Gi"  # Increased for CLIP model (1GB) + FAISS index (2GB) + overhead
         }
 
         cpu_idle = true
