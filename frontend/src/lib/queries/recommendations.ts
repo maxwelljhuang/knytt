@@ -35,7 +35,7 @@ export function useFeed(
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to load recommendations");
+        throw new Error(error.detail || error.message || "Failed to load recommendations");
       }
 
       return response.json();
@@ -83,7 +83,7 @@ export function useSimilarProducts(
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to load similar products");
+        throw new Error(error.detail || error.message || "Failed to load similar products");
       }
 
       return response.json();
