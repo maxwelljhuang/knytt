@@ -707,14 +707,41 @@ async def rebuild_faiss_index_sync(
             f"saved to {save_path}"
         )
 
+        # Upload to GCS if configured
+        gcs_uploaded = False
+        gcs_bucket = os.getenv('GCS_FAISS_INDEX_BUCKET')
+        gcs_path = os.getenv('GCS_FAISS_INDEX_PATH')
+
+        if gcs_bucket and gcs_path:
+            try:
+                from ...ml.utils.gcs_utils import upload_faiss_index_to_gcs
+                logger.info(f"Uploading FAISS index to GCS: gs://{gcs_bucket}/{gcs_path}/")
+
+                gcs_uploaded = upload_faiss_index_to_gcs(
+                    local_path=save_path,
+                    bucket_name=gcs_bucket,
+                    gcs_path=gcs_path
+                )
+
+                if gcs_uploaded:
+                    logger.info(f"Successfully uploaded FAISS index to GCS")
+                else:
+                    logger.warning(f"Failed to upload FAISS index to GCS")
+            except Exception as e:
+                logger.error(f"Error uploading to GCS: {e}", exc_info=True)
+        else:
+            logger.info("GCS upload skipped (GCS_FAISS_INDEX_BUCKET or GCS_FAISS_INDEX_PATH not configured)")
+
         return {
             "status": "success",
             "embedding_type": embedding_type,
             "num_vectors": stats["num_vectors"],
             "index_type": stats["index_type"],
             "save_path": str(save_path),
+            "gcs_uploaded": gcs_uploaded,
+            "gcs_bucket": gcs_bucket if gcs_bucket else None,
             "stats": stats,
-            "message": f"FAISS index rebuilt with {stats['num_vectors']} vectors"
+            "message": f"FAISS index rebuilt with {stats['num_vectors']} vectors" + (f" and uploaded to GCS" if gcs_uploaded else "")
         }
 
     except Exception as e:
