@@ -72,6 +72,7 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
       price: product.price || 0,
       currency: product.currency || "$",
       imageUrl: product.image_url,
+      productUrl: product.product_url, // Affiliate/merchant link
     });
 
     // Track interaction in background
