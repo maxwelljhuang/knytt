@@ -145,21 +145,6 @@ export function ProductCard({ product, userId, onProductClick }: ProductCardProp
             />
           </button>
         </Tooltip>
-
-        {/* Stock Badge */}
-        {product.in_stock !== undefined && (
-          <div className="absolute bottom-3 left-3">
-            {product.in_stock ? (
-              <span className="px-3 py-1.5 text-xs font-semibold bg-green-500 text-white rounded-full shadow-md">
-                In Stock
-              </span>
-            ) : (
-              <span className="px-3 py-1.5 text-xs font-semibold bg-red-500 text-white rounded-full shadow-md">
-                Out of Stock
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Product Info */}
