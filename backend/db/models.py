@@ -213,10 +213,11 @@ class UserInteraction(Base):
         index=True,
         comment="Context: search, feed, similar, recommendation, etc.",
     )
-    query = Column(String(500), nullable=True, comment="Search query that led to this interaction")
-    position = Column(
-        Integer, nullable=True, comment="Position of product in results (for CTR analysis)"
-    )
+    # TODO: Uncomment after database migration is run
+    # query = Column(String(500), nullable=True, comment="Search query that led to this interaction")
+    # position = Column(
+    #     Integer, nullable=True, comment="Position of product in results (for CTR analysis)"
+    # )
 
     # Additional metadata (using interaction_metadata to avoid SQLAlchemy reserved name)
     interaction_metadata = Column(
