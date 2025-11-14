@@ -8,6 +8,7 @@ GET /admin/task-status/{task_id} - Check Celery task status
 """
 
 import logging
+import os
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
