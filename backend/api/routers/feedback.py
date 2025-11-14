@@ -172,7 +172,12 @@ def _store_interaction(request: FeedbackRequest, db: Session) -> Optional[str]:
 
         if user is None:
             # Create new user with external_id (for external user systems)
-            user = User(external_id=user_id_str)
+            # Use placeholder email and password_hash for anonymous/external users
+            user = User(
+                external_id=user_id_str,
+                email=f"{user_id_str}@anonymous.knytt.local",  # Placeholder email
+                password_hash="",  # Empty password hash (external auth)
+            )
             db.add(user)
             db.flush()  # Get the user ID
             logger.info(f"Created new user: external_id={user_id_str}, id={user.id}")
