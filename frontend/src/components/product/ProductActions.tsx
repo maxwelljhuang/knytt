@@ -8,13 +8,11 @@ import { InteractionType } from "@/types/enums";
 interface ProductActionsProps {
   productId: string;
   userId?: string;
-  inStock: boolean;
 }
 
 export function ProductActions({
   productId,
   userId,
-  inStock,
 }: ProductActionsProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
@@ -31,7 +29,6 @@ export function ProductActions({
   };
 
   const handleAddToCart = () => {
-    if (!inStock) return;
     if (!userId) return; // Skip if not authenticated
 
     setIsAddedToCart(true);
@@ -52,11 +49,8 @@ export function ProductActions({
       {/* Add to Cart Button */}
       <button
         onClick={handleAddToCart}
-        disabled={!inStock}
         className={`w-full px-6 py-4 rounded-full font-semibold text-lg transition-all shadow-lg ${
-          !inStock
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-            : isAddedToCart
+          isAddedToCart
             ? "bg-green-600 text-white"
             : "bg-gradient-to-r from-sage to-evergreen text-white hover:shadow-xl hover:scale-105"
         }`}
@@ -70,7 +64,7 @@ export function ProductActions({
           ) : (
             <>
               <ShoppingCart className="w-6 h-6" />
-              <span>{inStock ? "Add to Cart" : "Out of Stock"}</span>
+              <span>Add to Cart</span>
             </>
           )}
         </span>

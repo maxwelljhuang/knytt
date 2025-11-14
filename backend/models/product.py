@@ -316,13 +316,12 @@ class ProductIngestion(BaseModel):
 
         # Weight distribution for different fields
         weights = {
-            "product_name": 0.15,
-            "description": 0.10,
-            "search_price": 0.15,
-            "merchant_image_url": 0.15,
-            "brand_name": 0.10,
+            "product_name": 0.16,
+            "description": 0.11,
+            "search_price": 0.16,
+            "merchant_image_url": 0.16,
+            "brand_name": 0.11,
             "category_name": 0.05,
-            "in_stock": 0.05,
             "merchant_name": 0.05,
             "colour": 0.05,
             "has_multiple_images": 0.05,
@@ -348,9 +347,6 @@ class ProductIngestion(BaseModel):
 
         if self.category_name or self.merchant_category:
             score += weights["category_name"]
-
-        if self.in_stock:
-            score += weights["in_stock"]
 
         if self.merchant_name:
             score += weights["merchant_name"]

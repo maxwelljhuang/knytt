@@ -56,7 +56,7 @@ async def get_user_favorites(
                 currency=product.currency or "GBP",
                 image_url=product.merchant_image_url or product.aw_image_url,
                 brand=product.brand_name,
-                in_stock=True,  # Default to True (in_stock not in Product model)
+                in_stock=product.in_stock,
                 liked_at=favorite.created_at,
             )
         )
