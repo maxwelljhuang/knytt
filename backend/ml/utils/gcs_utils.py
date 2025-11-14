@@ -188,6 +188,52 @@ def upload_faiss_index_to_gcs(
         return False
 
 
+def delete_faiss_index_from_gcs(bucket_name: str, gcs_path: str) -> bool:
+    """
+    Delete FAISS index files from GCS.
+
+    Args:
+        bucket_name: Name of the GCS bucket
+        gcs_path: Path prefix in GCS bucket
+
+    Returns:
+        True if deletion successful, False otherwise
+    """
+    if not GCS_AVAILABLE:
+        logger.error("google-cloud-storage library not available")
+        return False
+
+    try:
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+
+        required_files = ['index.faiss', 'id_mapping.npz', 'metadata.npy']
+        deleted_files = []
+
+        for filename in required_files:
+            blob_path = f"{gcs_path}/{filename}" if gcs_path else filename
+            blob = bucket.blob(blob_path)
+
+            try:
+                if blob.exists():
+                    blob.delete()
+                    logger.info(f"Deleted {filename} from GCS")
+                    deleted_files.append(filename)
+                else:
+                    logger.debug(f"File not found (skipping): gs://{bucket_name}/{blob_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete {filename}: {e}")
+
+        if deleted_files:
+            logger.info(f"Deleted {len(deleted_files)} files from GCS: {deleted_files}")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Error deleting FAISS index from GCS: {e}", exc_info=True)
+        return False
+
+
 def check_gcs_index_exists(bucket_name: str, gcs_path: str) -> bool:
     """
     Check if FAISS index files exist in GCS.

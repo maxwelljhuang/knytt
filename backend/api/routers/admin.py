@@ -714,9 +714,17 @@ async def rebuild_faiss_index_sync(
 
         if gcs_bucket and gcs_path:
             try:
-                from ...ml.utils.gcs_utils import upload_faiss_index_to_gcs
-                logger.info(f"Uploading FAISS index to GCS: gs://{gcs_bucket}/{gcs_path}/")
+                from ...ml.utils.gcs_utils import delete_faiss_index_from_gcs, upload_faiss_index_to_gcs
 
+                # Delete old index from GCS first
+                logger.info(f"Deleting old FAISS index from GCS: gs://{gcs_bucket}/{gcs_path}/")
+                delete_faiss_index_from_gcs(
+                    bucket_name=gcs_bucket,
+                    gcs_path=gcs_path
+                )
+
+                # Upload new index to GCS
+                logger.info(f"Uploading new FAISS index to GCS: gs://{gcs_bucket}/{gcs_path}/")
                 gcs_uploaded = upload_faiss_index_to_gcs(
                     local_path=save_path,
                     bucket_name=gcs_bucket,
@@ -728,7 +736,7 @@ async def rebuild_faiss_index_sync(
                 else:
                     logger.warning(f"Failed to upload FAISS index to GCS")
             except Exception as e:
-                logger.error(f"Error uploading to GCS: {e}", exc_info=True)
+                logger.error(f"Error managing GCS index: {e}", exc_info=True)
         else:
             logger.info("GCS upload skipped (GCS_FAISS_INDEX_BUCKET or GCS_FAISS_INDEX_PATH not configured)")
 
