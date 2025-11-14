@@ -86,7 +86,7 @@ class ProductFilters:
     max_price: Optional[float] = None
 
     # Availability
-    in_stock_only: bool = True
+    in_stock_only: bool = False
     min_stock_quantity: int = 0
 
     # Merchant/Seller
